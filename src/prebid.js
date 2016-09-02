@@ -455,14 +455,14 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function () {
 $$PREBID_GLOBAL$$.getBidResponses = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
   
-  //const responses = $$PREBID_GLOBAL$$._bidsReceived;
+  const responses = $$PREBID_GLOBAL$$._bidsReceived;
   
 
   // find the last requested id to get responses for most recent auction only
   //const currentRequestId = responses && responses.length && responses[responses.length - 1].requestId;
 
-  return $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adUnitCode)
-    .filter(uniques).map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
+  return responses.map(bid => bid.adUnitCode)
+    .filter(uniques).map(adUnitCode => responses
       .filter(bid => bid.adUnitCode === adUnitCode))
 
   /*return responses.map(bid => bid.adUnitCode)
@@ -571,7 +571,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           adObject.rendered = true;
           doc.write(ad);
           doc.close();
-          if (width>=0 && height>=0 && doc.defaultView && doc.defaultView.frameElement) {
+          if ((width && width>=0) && (height && height>=0) && doc.defaultView && doc.defaultView.frameElement) {
             doc.defaultView.frameElement.width = width;
             doc.defaultView.frameElement.height = height;
           }
@@ -580,7 +580,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
           doc.close();
 
-          if (doc.defaultView && doc.defaultView.frameElement) {
+          if ((width && width>=0) && (height && height>=0) && doc.defaultView && doc.defaultView.frameElement) {
             doc.defaultView.frameElement.width = width;
             doc.defaultView.frameElement.height = height;
           }

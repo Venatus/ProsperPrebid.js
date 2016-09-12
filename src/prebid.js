@@ -1,6 +1,7 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
+import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
@@ -564,6 +565,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         var url = adObject.adUrl;
         var ad = adObject.ad;
 
+        if (doc===document) {
+          utils.logError('Error trying to write ad. Ad render call ad id ' + id + ' was prevented from writing to the main document.');
+        } else if (ad) {
         //if an bidder needs to prepare anything before delivery, for example expose their own globals to the iframes scope, they have an oppertunity to do it here
         adaptermanager.prepareRendering(doc, adObject.bidderCode);
 
@@ -670,6 +674,15 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   if (adUnitCodes && adUnitCodes.length) {
     adUnits = adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
   }
+
+  // for video-enabled adUnits, only request bids if all bidders support video
+  const invalidVideoAdUnits = adUnits.filter(videoAdUnit).filter(hasNonVideoBidder);
+  invalidVideoAdUnits.forEach(adUnit => {
+    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video. No Prebid demand requests will be triggered for this adUnit.`);
+    for (let i = 0; i < adUnits.length; i++) {
+      if (adUnits[i].code === adUnit.code) {adUnits.splice(i, 1);}
+    }
+  });
 
   /*if (auctionRunning) {
     bidRequestQueue.push(() => {

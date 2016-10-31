@@ -583,10 +583,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         if (doc===document || adObject.mediaType === 'video') {
           utils.logError('Error trying to write ad. Ad render call ad id ' + id + ' was prevented from writing to the main document.');
         } else if (ad) {
-        //if an bidder needs to prepare anything before delivery, for example expose their own globals to the iframes scope, they have an oppertunity to do it here
-        adaptermanager.prepareRendering(doc, adObject.bidderCode);
-
-        if (ad) {
+          //if an bidder needs to prepare anything before delivery, for example expose their own globals to the iframes scope, they have an oppertunity to do it here
+          adaptermanager.prepareRendering(doc, adObject.bidderCode);
+        
           adObject.rendered = true;
           doc.write(ad);
           doc.close();
@@ -595,6 +594,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
             doc.defaultView.frameElement.height = height;
           }
         } else if (url) {
+          //if an bidder needs to prepare anything before delivery, for example expose their own globals to the iframes scope, they have an oppertunity to do it here
+          adaptermanager.prepareRendering(doc, adObject.bidderCode);
+          
           adObject.rendered = true;
           doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
           doc.close();
@@ -610,8 +612,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
       } else {
         utils.logError('Error trying to write ad. Cannot find ad by given id : ' + id);
-      }
-
+      }      
     } catch (e) {
       utils.logError('Error trying to write ad Id :' + id + ' to the page:' + e.message);
     }

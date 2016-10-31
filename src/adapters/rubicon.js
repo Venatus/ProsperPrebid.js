@@ -138,7 +138,7 @@ var RubiconAdapter = function RubiconAdapter() {
    * @param {Object} slot the slot from rubicon
    * @param {Object} ad a raw response
    */
-  function _makeBid(slot, ad) {
+  function _makeBid(slot, ad, sizeId) {
 
     var bidResponse,
         size = ad.dimensions;
@@ -164,7 +164,8 @@ var RubiconAdapter = function RubiconAdapter() {
         bidResponse.dealId = ad.deal;
       }
     }
-
+    bidResponse.sizeId = sizeId; 
+    console.log("RUBDBG: ",bidResponse);
     bidmanager.addBidResponse(slot.getElementId(), bidResponse);
 
   }
@@ -221,6 +222,7 @@ var RubiconAdapter = function RubiconAdapter() {
       }
 
       bid.params.sizes = tempSize;
+      bid.requestCount = tempSize.length;
     });
   }
 
@@ -321,7 +323,7 @@ var RubiconAdapter = function RubiconAdapter() {
     _bidStart = (new Date).getTime();
 
     _mapSizes(bidderRequest.bids);
-
+    console.log("RUBDBG: ",bidderRequest);
     if (utils.isEmpty(bidderRequest.bids)) {
       return;
     }
@@ -352,10 +354,10 @@ var RubiconAdapter = function RubiconAdapter() {
         var slot = slots.find(slot => slot.getElementId() === params.elementId);
         var ad = slot.getRawResponseBySizeId(params.sizeId);
         var time = ((new Date).getTime() - _bidStart);
-
+        console.log("RUBDBG: ",slot, ad, params);
         utils.logMessage(`Rubicon Project bid back for "${params.elementId}" size ${params.sizeId} at: ${time}`);
 
-        _makeBid(slot, ad);
+        _makeBid(slot, ad, params.sizeId);
 
       })) {
         callback = () => {

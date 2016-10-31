@@ -186,6 +186,15 @@ gulp.task('watch', function () {
     livereload: true
   });
 });
+// Watch Task withOut Live Reload
+gulp.task('watch-plain', function () {
+
+  gulp.watch([
+    'src/**/*.js',
+    'test/spec/**/*.js',
+    '!test/spec/loaders/**/*.js'
+  ], ['devpack']);
+});
 
 gulp.task('quality', ['hint', 'jscs']);
 

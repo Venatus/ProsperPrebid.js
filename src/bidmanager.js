@@ -63,8 +63,14 @@ function bidsBackAdUnit(adUnitCode) {
     return false;//adUnit not found??!! throw error i suppose
   }
   const requested = adunit.bids.length;
+  let subRequestcount = 0;
+  for(let i=0;i<adunit.bids.length;i++){
+    if(adunit.bids[i].requestCount > 0){
+      subRequestcount += adunit.bids[i].requestCount - 1;
+    }
+  }
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
-  return requested === received;
+  return requested + subRequestcount === received;
 }
 
 /* jshint ignore:start */
@@ -92,6 +98,7 @@ function getBidSet(bidder, adUnitCode) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => {
     return bidSet.bids.filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
+}
 /* jshint ignore:start */
 function getGlobalBidResponse(request) {
   var resp = $$PREBID_GLOBAL$$._bidsReceived.find(bidSet => request.bidId === bidSet.adId);
@@ -112,7 +119,8 @@ function getBidSetForBidderGlobal(bid, adUnitCode) {
   var bidRequest;
   var bidderObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bid.bidderCode);
   if (bidderObj && bidderObj.bids) {
-    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId)));//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit //maybe instead have a requestId, as a bidder might also have multiple responses per bidId...?    
+    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId)) && (!bid.sizeId || (bid.sizeId === bidRequest.sizeId)));
+      //if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit //maybe instead have a requestId, as a bidder might also have multiple responses per bidId...?    
     if (bidRequest) {
       /* jshint ignore:start */
       return { bidSet: bidderObj, request: bidRequest, response: getGlobalBidResponse(bidRequest) };
@@ -125,7 +133,7 @@ function getBidSetForBidderGlobal(bid, adUnitCode) {
     if (bidderObj.bidderCode === bid.bidderCode) {
       for (var j in bidderObj.bids) {
         bidRequest = bidderObj.bids[j];
-        if (bidderObj.bids[j].placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId))) {//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
+        if (bidderObj.bids[j].placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId)) && (!bid.sizeId || (bid.sizeId === bidRequest.sizeId))) {//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
           //debugger;
           if (bidRequest) {
             /* jshint ignore:start */
@@ -372,9 +380,9 @@ exports.executeCallback = function (timedOut) {
     //  debugger;
     //}
   }
-  if (externalCallbackArr.called !== true) {
+  /*if (externalCallbackArr.called !== true) {
     processCallbacks(externalCallbackArr);
-    externalCallbackArr.called = true;
+    externalCallbackArr.called = true;*/
 
   if (externalCallbacks.all.called !== true) {
     processCallbacks(externalCallbacks.all);
@@ -476,9 +484,9 @@ exports.addCallback = function (id, callback, cbEvent) {
 exports.removeCallback = function (id, callback, cbEvent) {
   var arr = [];
   if (CONSTANTS.CB.TYPE.ALL_BIDS_BACK === cbEvent) {
-    arr = externalCallbackArr;
+    arr = externalCallbacks.all;
   } else if (CONSTANTS.CB.TYPE.AD_UNIT_BIDS_BACK === cbEvent) {
-    arr = externalCallbackByAdUnitArr;
+    arr = externalCallbacks.byAdUnit;
   }  
   for (var i = 0; i < arr.length; i++) {
     //id method never seems to be invoked, so it remains a function reference, ignore the id for now

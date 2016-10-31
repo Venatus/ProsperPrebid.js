@@ -24,7 +24,9 @@ export function ajax(url, callback, data, options = {}) {
 
   if (useXDomainRequest) {
     x = new window.XDomainRequest();
-    x.onload = handler;
+    x.onload = function () {
+      callback(x.responseText, x);
+    };
 
     // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
     x.onerror = function () {
@@ -53,10 +55,11 @@ export function ajax(url, callback, data, options = {}) {
   if (!useXDomainRequest) {
     if (options.withCredentials) {
       x.withCredentials = true;
-    } else {
-      x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-      x.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
     }
+    if (options.preflight) {
+      x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    }
+    x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
   }
 
   x.send(method === 'POST' && data);

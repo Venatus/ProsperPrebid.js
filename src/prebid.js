@@ -246,7 +246,7 @@ function getPresetTargeting() {
           })
         };
       });
-    })();
+    }());
   }
 }
 
@@ -284,11 +284,7 @@ function getDealTargeting() {
   return $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.dealId).map(bid => {
     const dealKey = `hb_deal_${bid.bidderCode}`;
     return {
-      [bid.adUnitCode]: CONSTANTS.TARGETING_KEYS.map(key => {
-        return {
-          [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
-        };
-      })
+      [bid.adUnitCode]: getTargetingMap(bid, CONSTANTS.TARGETING_KEYS)
       .concat({ [dealKey.substring(0, 20)]: [bid.adserverTargeting[dealKey]] })
     };
   });
@@ -328,14 +324,18 @@ function getBidLandscapeTargeting() {
   return $$PREBID_GLOBAL$$._bidsReceived.map(bid => {
     if (bid.adserverTargeting) {
       return {
-        [bid.adUnitCode]: standardKeys.map(key => {
-          return {
-            [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
-          };
-        })
+        [bid.adUnitCode]: getTargetingMap(bid, standardKeys)
       };
     }
   }).filter(bid => bid); // removes empty elements in array
+}
+
+function getTargetingMap(bid, keys) {
+  return keys.map(key => {
+    return {
+      [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
+    };
+  });
 }
 
 function getAllTargeting() {
@@ -385,6 +385,12 @@ function removeComplete() {
     .forEach(bid => responses.splice(responses.indexOf(bid), 1));
 }
 
+function setRenderSize(doc, width, height) {
+  if ((width && width>=0) && (height && height>=0) && doc.defaultView && doc.defaultView.frameElement) {
+    doc.defaultView.frameElement.width = width;
+    doc.defaultView.frameElement.height = height;
+  }
+}
 
 //////////////////////////////////
 //                              //
@@ -589,10 +595,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           adObject.rendered = true;
           doc.write(ad);
           doc.close();
-          if ((width && width>=0) && (height && height>=0) && doc.defaultView && doc.defaultView.frameElement) {
-            doc.defaultView.frameElement.width = width;
-            doc.defaultView.frameElement.height = height;
-          }
+          setRenderSize(doc, width, height);
         } else if (url) {
           //if an bidder needs to prepare anything before delivery, for example expose their own globals to the iframes scope, they have an oppertunity to do it here
           adaptermanager.prepareRendering(doc, adObject.bidderCode);
@@ -600,12 +603,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           adObject.rendered = true;
           doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
           doc.close();
-
-          if ((width && width>=0) && (height && height>=0) && doc.defaultView && doc.defaultView.frameElement) {
-            doc.defaultView.frameElement.width = width;
-            doc.defaultView.frameElement.height = height;
-          }
-
+          setRenderSize(doc, width, height);
         } else {
           utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
         }
@@ -1019,6 +1017,18 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
     return;
   }
   return masterTag;
+};
+
+/**
+ * Set the order bidders are called in. If not set, the bidders are called in
+ * the order they are defined wihin the adUnit.bids array
+ * @param {string} order - Order to call bidders in. Currently the only possible value
+ * is 'random', which randomly shuffles the order
+ */
+$$PREBID_GLOBAL$$.setBidderSequence = function (order) {
+  if (order === CONSTANTS.ORDER.RANDOM) {
+    adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
+  }
 };
 
 processQue();

@@ -1,4 +1,4 @@
-import { uniques } from './utils';
+import { uniques, flatten } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
@@ -57,6 +57,18 @@ function updateLastModified(adUnitCode) {
 }
 
 function bidsBackAdUnit(adUnitCode) {
+/* figure out what indexchange is doing here..probably same issue as rubicon??
+  const requested = $$PREBID_GLOBAL$$._bidsRequested
+    .map(request => request.bids
+      .filter(bid => bid.placementCode === adUnitCode))
+    .reduce(flatten)
+    .map(bid => {
+      return bid.bidder === 'indexExchange' ?
+          bid.sizes.length :
+          1;
+    }).reduce(add, 0);
+*/
+
   let adunit = getAdUnit(adUnitCode);
   if(!adunit){    
     //debugger;
@@ -80,9 +92,17 @@ function add(a, b) {
 /* jshint ignore:end */
 
 function bidsBackAll() {
+  const requested = $$PREBID_GLOBAL$$._bidsRequested
+    .map(request => request.bids)
+    .reduce(flatten)
+    .map(bid => {
+      return bid.bidder === 'indexExchange' ?
+        bid.sizes.length :
+        1;
+    }).reduce(add, 0);
   //const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add, 0);
   /* jshint ignore:start */
-  const requested = ($$PREBID_GLOBAL$$._bidsRequested.length === 0) ? 0 : $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
+  //const requested = ($$PREBID_GLOBAL$$._bidsRequested.length === 0) ? 0 : $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
   const received = $$PREBID_GLOBAL$$._bidsReceived.length;
   
   return requested === received

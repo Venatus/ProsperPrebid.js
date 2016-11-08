@@ -369,12 +369,33 @@ exports.executeCallback = function (timedOut) {
     //hence we need fake/timed out responses  
     var resultIds = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adId);
 
-    var timedoutBids = $$PREBID_GLOBAL$$._bidsRequested.reduce((arr, val) => { arr.push.apply(arr, val.bids.filter(bid => resultIds.indexOf(bid.bidId) === -1)); return arr; }, []);//.filter(bid => !resultIds.find(bid.bidId));  
+    var timedoutBids = $$PREBID_GLOBAL$$._bidsRequested.reduce((arr, val) => { arr.push.apply(arr, val.bids.filter(bid => resultIds.indexOf(bid.bidId) === -1)); return arr; }, []);//.filter(bid => !resultIds.find(bid.bidId));
+    var getBid = function(bid){
+        var bidObj = bidfactory.createBid(3);
+        bidObj.bidderCode = bid.bidder;
+        return bidObj;
+     };  
     timedoutBids.map(bid => {
       //      debugger;
-      var bidObj = bidfactory.createBid(3);
-      bidObj.bidderCode = bid.bidder;
-      bidmanager.addBidResponse(bid.placementCode, bidObj);
+      var bidObj;
+      if(bid.props && bid.props.length>0){
+        for(let i=0;i<bid.props.length;i++){
+          bidObj = getBid(bid);
+          for(var j in bid.props[i]){
+            bidObj[j] = bid.props[i][j];
+          }
+          bidmanager.addBidResponse(bid.placementCode, bidObj);
+        }
+      }else if(bid.requestCount>0){
+        for(let i=0;i<bid.requestCount;i++){
+          //bidObj = bidfactory.createBid(3);
+          //bidObj.bidderCode = bid.bidder;
+          //bidObj.sizeId = Math.random();
+          bidmanager.addBidResponse(bid.placementCode, getBid(bid));  
+        }
+      }else{
+        bidmanager.addBidResponse(bid.placementCode, getBid(bid));
+      }
     });
     //if (timedoutBids.length > 0)
     //  debugger;

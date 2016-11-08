@@ -221,8 +221,17 @@ var RubiconAdapter = function RubiconAdapter() {
         }
       }
 
+      
       bid.params.sizes = tempSize;
+      //should be replaced by a more generic object, like outstanding requests, this should later again be match with the received bids
+      //it would be better if the adapter would generate unique adId's for each bidRequest/Response, as in fact they are different, and shouldn't be hidden away
+      //ideally each outstanding request is bound to a bid
       bid.requestCount = tempSize.length;
+      bid.props = tempSize.map(size => {
+        return {
+          sizeId:size
+        }
+      });
     });
   }
 
@@ -380,6 +389,7 @@ var RubiconAdapter = function RubiconAdapter() {
   return {
     /**
      * @public callBids
+     * @public prepareRendering
      * the interface to Prebid
      */
     callBids: _callBids,

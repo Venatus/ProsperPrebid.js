@@ -4,6 +4,7 @@
     "adbutler",
     "adequant",
     "adform",
+    "adkernel",
     "admedia",
     "aol",
     "appnexus",
@@ -18,8 +19,8 @@
     "piximedia",
     "pubmatic",
     "pulsepoint",
+    "rhythmone",
     "rubicon",
-    "rubiconLite",
     "sonobi",
     "sovrn",
     "springserve",
@@ -33,6 +34,7 @@
     "memeglobal",
     "centro",
     "roxot",
+    "vertoz",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -51,6 +53,11 @@
     {
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "rubicon": {
+        "alias": "rubiconLite"
       }
     }
 ]

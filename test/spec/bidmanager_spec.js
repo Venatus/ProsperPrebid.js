@@ -313,11 +313,12 @@ describe('bidmanager.js', function () {
 
     });
 
-    it('alwaysUseBid=true and inherit custom', function () {
+    it('alwaysUseBid=true, sendStandardTargeting=false, and inherit custom', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
           alwaysUseBid: true,
+          sendStandardTargeting: false,
           adserverTargeting: [
             {
               key: "hb_bidder",
@@ -347,7 +348,8 @@ describe('bidmanager.js', function () {
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
-
+      assert.equal(bid.alwaysUseBid, true);
+      assert.equal(bid.sendStandardTargeting, false);
     });
 
     it('suppressEmptyKeys=true' , function() {
@@ -374,44 +376,6 @@ describe('bidmanager.js', function () {
 
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
-    });
-
-    it('sendStandardTargeting=false and inherit custom', function () {
-      $$PREBID_GLOBAL$$.bidderSettings =
-      {
-        appnexus: {
-          alwaysUseBid: true,
-          sendStandardTargeting: false,
-          adserverTargeting: [
-            {
-              key: "hb_bidder",
-              val: function (bidResponse) {
-                return bidResponse.bidderCode;
-              }
-            }, {
-              key: "hb_adid",
-              val: function (bidResponse) {
-                return bidResponse.adId;
-              }
-            }, {
-              key: "hb_pb",
-              val: function (bidResponse) {
-                return bidResponse.pbHg;
-              }
-            }, {
-              key: "custom",
-              val: 42
-            }
-          ]
-        }
-      };
-
-      var expected = {
-        "custom": 42
-      };
-      var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
-      assert.deepEqual(response, expected);
-
     });
 
   });

@@ -53,8 +53,7 @@ function RubiconAdapter() {
       } catch(err) {
         utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
       }
-    bidResponse.sizeId = sizeId; 
-    console.log("RUBDBG: ",bidResponse);
+
       function bidCallback(responseText) {
         try {
           utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
@@ -73,18 +72,6 @@ function RubiconAdapter() {
           bidmanager.addBidResponse(bid.placementCode, badBid);
         }
       }
-
-      
-      bid.params.sizes = tempSize;
-      //should be replaced by a more generic object, like outstanding requests, this should later again be match with the received bids
-      //it would be better if the adapter would generate unique adId's for each bidRequest/Response, as in fact they are different, and shouldn't be hidden away
-      //ideally each outstanding request is bound to a bid
-      bid.requestCount = tempSize.length;
-      bid.props = tempSize.map(size => {
-        return {
-          sizeId:size
-        }
-      });
     });
   }
 
@@ -238,27 +225,9 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
       return first - second;
     });
 };
-  //if we win the bid, and we're rendered in a iframe, expose the rubicontag global to the iframe if there is no way to resolve the global, just place a reference in the iframe so it can be resolved..owe and yah! make sure no different globals exists, of they won't share a state, TODO: make a check or diss globals and always reference
-  function _prepareRendering(doc){
-    var win = doc.defaultView || doc.parentWindow;
-    
-    if(win && !win.rubicontag && !parent.window.rubicontag && !window.top.rubicontag){
-      win.rubicontag = window.rubicontag;
-    }
-  }
 
-  return {
-    /**
-     * @public callBids
-     * @public prepareRendering
-     * the interface to Prebid
-     */
-    callBids: _callBids,
-    prepareRendering: _prepareRendering,
-  };
 RubiconAdapter.createNew = function() {
   return new RubiconAdapter();
 };
 
 module.exports = RubiconAdapter;
-

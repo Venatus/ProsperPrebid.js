@@ -582,5 +582,15 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
+  var search = bid && bid.placementCode || bid && bid.adUnitCode;
+  if(typeof(filter.includes) == 'undefined'){
+    //polyfill should be added here!!
+    for(var i=0;i<filter.length;i++){
+      if(filter[i] == search){
+        return true;
+      }
+    }
+    return false;
+  }
+  return filter.includes(search);
 }

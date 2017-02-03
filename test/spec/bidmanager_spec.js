@@ -424,6 +424,9 @@ describe('bidmanager.js', function () {
       bidmanager.adjustBids(bid)
       assert.equal(bid.cpm, 0);
 
+      // reset bidderSettings so we don't mess up further tests
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+
     });
   });
 
@@ -477,7 +480,7 @@ describe('bidmanager.js', function () {
       bid.dealId = "test deal";
       bidmanager.addBidResponse(bid.adUnitCode, bid);
       const addedBid = pbjsTestOnly.popLastReceivedBid();
-      assert.equal(addedBid.adserverTargeting[`hb_deal_${bid.bidderCode}`], bid.dealId, 'dealId placed in adserverTargeting');
+      assert.equal(addedBid.adserverTargeting[`hb_deal`], bid.dealId, 'dealId placed in adserverTargeting');
     });
 
     it('should not alter bid adID', () => {

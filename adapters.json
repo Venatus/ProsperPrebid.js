@@ -11,17 +11,24 @@
     "appnexusAst",
     "conversant",
     "criteo",
+    "districtmDMX",
+    "fidelity",
     "getintent",
+    "gumgum",
     "hiromedia",
     "indexExchange",
     "kruxlink",
     "komoona",
+    "mantis",
     "openx",
     "piximedia",
     "pubmatic",
     "pulsepoint",
     "rhythmone",
     "rubicon",
+    "smartyads",
+	  "smartadserver",
+    "sekindoUM",
     "sonobi",
     "sovrn",
     "springserve",
@@ -33,9 +40,14 @@
     "jcm",
     "underdogmedia",
     "memeglobal",
+    "criteo",
     "centro",
+    "xhb",
+    "sharethrough",
     "roxot",
     "vertoz",
+    "widespace",
+    "admixer",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -60,5 +72,16 @@
       "rubicon": {
         "alias": "rubiconLite"
       }
+    },
+    {
+      "appnexus": {
+        "alias": "featureforward"
+      }
+    },
+    {
+      "adkernel": {
+        "alias": "headbidding"
+      }
     }
+
 ]

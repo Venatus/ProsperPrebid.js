@@ -8,9 +8,6 @@ var CriteoAdapter = function CriteoAdapter() {
   var _bidderCode = 'criteo';
   var _profileId = 125;
 
-
-  //if(top != self && !self.)
-
   function _callBids(params) {
     if (!window.criteo_pubtag || window.criteo_pubtag instanceof Array) {
       // publisherTag not loaded yet
@@ -71,7 +68,7 @@ var CriteoAdapter = function CriteoAdapter() {
     };
 
     window.Criteo.events.push(biddingEventFunc);
-    
+
   }
 
   function parseBidResponse(bidsResponse) {
@@ -87,17 +84,6 @@ var CriteoAdapter = function CriteoAdapter() {
     return jsonbidsResponse.slots === undefined;
   }
 
-  function parseWidth(bidResponse) {
-    var rx = /width=['"]([0-9]*)['"]/g;
-    var arr = rx.exec(bidResponse.creative);
-    return parseInt(arr[1]);
-  }
-  function parseHeight(bidResponse) {
-    var rx = /height=['"]([0-9]*)['"]/g;
-    var arr = rx.exec(bidResponse.creative);
-    return parseInt(arr[1]);
-  }
-
   function _callbackSuccess(slots) {
     return function (bidsResponse) {
       var jsonbidsResponse = parseBidResponse(bidsResponse);
@@ -111,7 +97,7 @@ var CriteoAdapter = function CriteoAdapter() {
         // look for the matching bid response
         for (var j = 0; j < jsonbidsResponse.slots.length; j++) {
           if (jsonbidsResponse.slots[j] && jsonbidsResponse.slots[j].impid === slots[i].impId) {
-            bidResponse = jsonbidsResponse.slots[j];
+            bidResponse = jsonbidsResponse.slots.splice(j, 1)[0];
             break;
           }
         }
@@ -123,8 +109,8 @@ var CriteoAdapter = function CriteoAdapter() {
           bidObject.bidderCode = _bidderCode;
           bidObject.cpm = bidResponse.cpm;
           bidObject.ad = bidResponse.creative;
-          bidObject.width = bidResponse.width ? bidResponse.width : parseWidth(bidResponse);
-          bidObject.height = bidResponse.height ? bidResponse.height : parseHeight(bidResponse);
+          bidObject.width = bidResponse.width;
+          bidObject.height = bidResponse.height;
         }
         else {
           bidObject = _invalidBidResponse();

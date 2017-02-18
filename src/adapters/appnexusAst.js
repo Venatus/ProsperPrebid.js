@@ -50,6 +50,9 @@ function AppnexusAstAdapter() {
         if (bid.params.reserve) {
           tag.reserve = bid.params.reserve;
         }
+        if(bid.spec && bid.spec.visibility){
+          tag.position = bid.spec.isVisible ? 1 : 0;
+        }
         if (bid.params.position) {
           tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
         }
@@ -149,6 +152,7 @@ function AppnexusAstAdapter() {
 
       tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
+      bid.origResponse = ad;
       if (type === 'video') bid.mediaType = 'video';
       const placement = bidRequests[bid.adId].placementCode;
       bidmanager.addBidResponse(placement, bid);

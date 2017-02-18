@@ -187,6 +187,9 @@ function RubiconAdapter() {
 
     // defaults
     floor = (floor = parseFloat(floor)) > 0.01 ? floor : 0.01;
+    if(bid.spec && bid.spec.visibility){
+      position =  bid.spec.isVisible ? 'atf' : 'btf';
+    }
     position = position || 'btf';
 
     // use rubicon sizes if provided, otherwise adUnit.sizes

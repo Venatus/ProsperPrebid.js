@@ -23,6 +23,7 @@ function Bid(statusCode, bidRequest) {
   this.height = 0;
   this.statusMessage = _getStatus();
   this.adId = _bidId;
+  this.origCPM = null;
 
   function _getStatus() {
     switch (_statusCode) {
@@ -39,6 +40,12 @@ function Bid(statusCode, bidRequest) {
 
   this.getStatusCode = function () {
     return _statusCode;
+  };
+  this.adjustCPM = function (cpm) {    
+    if(this.origCPM == null && this.cpm){
+      this.origCPM = this.cpm; 
+    }
+    this.cpm = cpm;
   };
 
   //returns the size of the bid creative. Concatenation of width and height by ‘x’.

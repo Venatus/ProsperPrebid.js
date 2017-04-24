@@ -18,7 +18,8 @@
   ],
   "globalVarName": "pbjs",
   "analytics": [
-    "ga"
+    "ga",
+    "roxot"
   ],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",

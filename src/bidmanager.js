@@ -262,13 +262,13 @@ exports.addBidResponse = function (adUnitCode, bid) {
       return;
     }
     if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
-      console.log("callback adunit complete: " + bid.adUnitCode);
+      utils.logInfo("callback adunit complete: " + bid.adUnitCode);
       triggerAdUnitCallbacks(bid.adUnitCode);
       updateLastModified(bid.adUnitCode);
     } else {
       //debugger;
       //bidsBackAdUnit(bid.adUnitCode);
-      console.log("adunit not complete yet: " + bid.adUnitCode);
+      utils.logInfo("adunit not complete yet: " + bid.adUnitCode);
     }
   }
 

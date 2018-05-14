@@ -26,10 +26,10 @@ var PubmaticAdapter = function PubmaticAdapter() {
     }
 
     // Load pubmatic script in an iframe, because they call document.write
-    _getBids();
+    _getBids(params);
   }
 
-  function _getBids() {
+  function _getBids(params) {
 
 
     //create the iframe
@@ -41,11 +41,11 @@ var PubmaticAdapter = function PubmaticAdapter() {
     elToAppend.insertBefore(iframe, elToAppend.firstChild);
 
     var iframeDoc = utils.getIframeDocument(iframe);
-    iframeDoc.write(_createRequestContent());
+    iframeDoc.write(_createRequestContent(params));
     iframeDoc.close();
   }
 
-  function _createRequestContent() {
+  function _createRequestContent(params) {
     var content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"' +
       ' "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><scr' +
       'ipt>inDapIF=true;</scr' + 'ipt></head>';
@@ -55,6 +55,25 @@ var PubmaticAdapter = function PubmaticAdapter() {
       'window.pm_pub_id  = "%%PM_PUB_ID%%";' +
       'window.pm_optimize_adslots     = [%%PM_OPTIMIZE_ADSLOTS%%];' +
       'window.pm_async_callback_fn = "window.parent.$$PREBID_GLOBAL$$.handlePubmaticCallback";';
+    try{
+      //debugger;
+      var kadpageurl = null;
+      if(params.bids){
+        for(var i=0;i<params.bids.length;i++){          
+          if(params.bids[i].params && params.bids[i].params.kadpageurl && params.bids[i].params.kadpageurl.toString().length>0){
+            kadpageurl = params.bids[i].params.kadpageurl; //assume they're the same for all bids;
+            break;
+          }
+        }
+      }
+     
+      if(kadpageurl){
+        content += 'window.kadpageurl = "'+kadpageurl+'";';
+      }
+    }catch(e){}
+
+
+      
     content += '</scr' + 'ipt>';
 
     var map = {};

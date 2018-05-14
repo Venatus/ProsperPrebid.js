@@ -19,37 +19,58 @@ const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
 const TIMEOUT_BUFFER = 500;
 
 var sizeMap = {
-  1:'468x60',
-  2:'728x90',
-  8:'120x600',
-  9:'160x600',
-  10:'300x600',
-  15:'300x250',
-  16:'336x280',
-  19:'300x100',
-  43:'320x50',
-  44:'300x50',
-  48:'300x300',
-  54:'300x1050',
-  55:'970x90',
-  57:'970x250',
-  58:'1000x90',
-  59:'320x80',
-  61:'1000x1000',
-  65:'640x480',
-  67:'320x480',
-  68:'1800x1000',
-  72:'320x320',
-  73:'320x160',
-  83:'480x300',
-  94:'970x310',
-  96:'970x210',
-  101:'480x320',
-  102:'768x1024',
-  113:'1000x300',
-  117:'320x100',
-  125:'800x250',
-  126:'200x600'
+  1: '468x60',
+  2: '728x90',
+  5: '120x90',
+  8: '120x600',
+  9: '160x600',
+  10: '300x600',
+  13: '200x200',
+  14: '250x250',
+  15: '300x250',
+  16: '336x280',
+  19: '300x100',
+  31: '980x120',
+  32: '250x360',
+  33: '180x500',
+  35: '980x150',
+  37: '468x400',
+  38: '930x180',
+  43: '320x50',
+  44: '300x50',
+  48: '300x300',
+  54: '300x1050',
+  55: '970x90',
+  57: '970x250',
+  58: '1000x90',
+  59: '320x80',
+  60: '320x150',
+  61: '1000x1000',
+  65: '640x480',
+  67: '320x480',
+  68: '1800x1000',
+  72: '320x320',
+  73: '320x160',
+  78: '980x240',
+  79: '980x300',
+  80: '980x400',
+  83: '480x300',
+  94: '970x310',
+  96: '970x210',
+  101: '480x320',
+  102: '768x1024',
+  103: '480x280',
+  108: '320x240',
+  113: '1000x300',
+  117: '320x100',
+  125: '800x250',
+  126: '200x600',
+  144: '980x600',
+  178: '970x500',
+  195: '600x300',
+  199: '640x200',
+  213: '1030x590',
+  214: '980x360',
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -307,10 +328,14 @@ function RubiconAdapter() {
       //store bid response
       //bid status is good (indicating 1)
       var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
-      bid.creative_id = ad.ad_id;
+      //debugger;
+      bid.creativeId = bid.creative_id = ad.ad_id;
       bid.bidderCode = bidRequest.bidder;
       bid.cpm = ad.cpm || 0;
       bid.dealId = ad.deal;
+      bid.advertiserId = ad.advertiser;
+      bid.campaignId = ad.campaign_id;
+      bid.dsp = ad.network;
       if (bidRequest.mediaType === 'video') {
         bid.width = bidRequest.params.video.playerWidth;
         bid.height = bidRequest.params.video.playerHeight;

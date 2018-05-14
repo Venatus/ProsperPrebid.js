@@ -141,6 +141,7 @@ function AppnexusAstAdapter() {
       const type = ad && ad.ad_type;
 
       let status;
+      //debugger;
       if (cpm !== 0 && (type === 'banner' || type === 'video' || type === 'video-outstream')) {
         status = STATUS.GOOD;
       } else {
@@ -262,6 +263,8 @@ function AppnexusAstAdapter() {
       bid.cpm = ad.cpm;
       bid.creative_id = ad.creative_id;
       bid.dealId = ad.deal_id;
+      bid.dsp = ad.buyer_member_id;
+      //debugger;
 
       if (ad.rtb.video) {
         bid.width = ad.rtb.video.player_width;

@@ -9,7 +9,7 @@ import CONSTANTS from 'src/constants.json';
 import events from 'src/events';
 import includes from 'core-js/library/fn/array/includes';
 
-import { timestamp, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, logMessage } from 'src/utils';
+import { timestamp, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, logMessage, isArray } from 'src/utils';
 //import { isAdUnitCodeMatchingSlot } from '../utils';
 
 /**
@@ -162,7 +162,7 @@ export function newBidder(spec) {
     },
     registerSyncs,
     callBids: function (bidderRequest, addBidResponse, done, ajax, requestDone) {
-      if (!Array.isArray(bidderRequest.bids)) {
+      if (!isArray(bidderRequest.bids)) {
         return;
       }
 
@@ -199,6 +199,14 @@ export function newBidder(spec) {
           setRequestPropsFilter(request.bidRequest, props);
         } else if (request.bidderRequest) {
           setRequestPropsFilter(request.bidderRequest, props);
+        } else if (request.bidRequests) {
+          if(isArray(request.bidRequests)) {
+            for(let i=0; i<request.bidRequests.length;i++) {
+              setRequestPropsFilter(request.bidRequests[i], props);
+            }
+          }else{
+            setRequestPropsFilter(request.bidRequests, props);
+          }
         } else if (bidderRequest) {
           /*debugger;
           setRequestPropsFilter(bidderRequest, props);
@@ -220,7 +228,7 @@ export function newBidder(spec) {
       function handleResponse(bids, request) {
         //TODO: delegate onResponse handling to after this call via this call
         //debugger;
-        console.log(bidderRequest);
+        logMessage(bidderRequest);
         /*if(bidderRequest.bids[0].adUnitCode.indexOf('p5_0_2') !=-1 && !request.bidRequest && !request.bidderRequest){
           debugger;
         }*/

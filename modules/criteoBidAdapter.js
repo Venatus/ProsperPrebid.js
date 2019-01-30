@@ -49,6 +49,11 @@ export const spec = {
 
     // If publisher tag not already loaded try to get it from fast bid
     if (!publisherTagAvailable()) {
+      if(window.$$PREBID_GLOBAL$$.sharedData && window.$$PREBID_GLOBAL$$.sharedData.bidders && !window.$$PREBID_GLOBAL$$.sharedData.bidders.Criteo) {
+        debugger;
+        window.$$PREBID_GLOBAL$$.sharedData.bidders.Criteo = window.Criteo || {};
+        window.Criteo = window.$$PREBID_GLOBAL$$.sharedData.bidders.Criteo;
+      }
       window.Criteo = window.Criteo || {};
       window.Criteo.usePrebidEvents = false;
 
@@ -135,7 +140,7 @@ export const spec = {
   onBidWon: (bid) => {
     if (publisherTagAvailable()) {
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
-      adapter.handleBidWon(bid);
+      adapter.handleBidWon(bid); // somehow adapter can be null? it has a dependency on window.Criteo.prebid_adapters;
     }
   },
 

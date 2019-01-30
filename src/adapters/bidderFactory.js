@@ -1,16 +1,15 @@
-import Adapter from 'src/adapter';
-import adaptermanager from 'src/adaptermanager';
-import { config } from 'src/config';
-import bidfactory from 'src/bidfactory';
-import { userSync } from 'src/userSync';
-import { nativeBidIsValid } from 'src/native';
-import { isValidVideoBid } from 'src/video';
-import CONSTANTS from 'src/constants.json';
-import events from 'src/events';
+import Adapter from '../adapter';
+import adapterManager from '../adapterManager';
+import { config } from '../config';
+import { createBid } from '../bidfactory';
+import { userSync } from '../userSync';
+import { nativeBidIsValid } from '../native';
+import { isValidVideoBid } from '../video';
+import CONSTANTS from '../constants.json';
+import events from '../events';
 import includes from 'core-js/library/fn/array/includes';
+import { logMessage, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, isArray, timestamp } from '../utils';
 
-import { timestamp, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, logMessage, isArray } from 'src/utils';
-//import { isAdUnitCodeMatchingSlot } from '../utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -127,7 +126,7 @@ const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netR
 /**
  * Register a bidder with prebid, using the given spec.
  *
- * If possible, Adapter modules should use this function instead of adaptermanager.registerBidAdapter().
+ * If possible, Adapter modules should use this function instead of adapterManager.registerBidAdapter().
  *
  * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
  */
@@ -137,13 +136,13 @@ export function registerBidder(spec) {
     : undefined;
   function putBidder(spec) {
     const bidder = newBidder(spec);
-    adaptermanager.registerBidAdapter(bidder, spec.code, mediaTypes);
+    adapterManager.registerBidAdapter(bidder, spec.code, mediaTypes);
   }
 
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
-      adaptermanager.aliasRegistry[alias] = spec.code;
+      adapterManager.aliasRegistry[alias] = spec.code;
       putBidder(Object.assign({}, spec, { code: alias }));
     });
   }
@@ -242,7 +241,7 @@ export function newBidder(spec) {
       // After all the responses have come back, call done() and
       // register any required usersync pixels.
       const responses = [];
-      function afterAllResponses(bids) {
+      function afterAllResponses() {
         done();
         events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
         registerSyncs(responses, bidderRequest.gdprConsent);
@@ -397,7 +396,7 @@ export function newBidder(spec) {
           function addBidUsingRequestMap(bid, index, array) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
-              const prebidBid = Object.assign(bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
+              const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid, array.length - 1 === index);
             } else {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);

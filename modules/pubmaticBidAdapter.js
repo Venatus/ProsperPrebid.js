@@ -924,7 +924,8 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: JSON.stringify(payload)
+      data: JSON.stringify(payload),
+      bidderRequest: bidderRequest
     };
   },
 

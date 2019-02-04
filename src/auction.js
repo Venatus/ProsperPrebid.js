@@ -238,7 +238,7 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels }
         return normalizeResponse(createBid(CONSTANTS.STATUS.TIMEOUT, request), request, bidder);
       }
       utils.logInfo('could not resolve response for: ' + bidder.bidderCode + ' timeout: ' + auctionTimedOut, bidRes, responseMap, request, bidder, adUnitCode, requestId)
-      // debugger;
+      debugger;
     }
 
     const responseMap = bidRes.reduce((placements, bid) => {

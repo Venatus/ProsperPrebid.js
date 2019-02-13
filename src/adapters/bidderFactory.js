@@ -206,6 +206,10 @@ export function newBidder(spec) {
           }else{
             setRequestPropsFilter(request.bidRequests, props);
           }
+        } else if (request.bids && isArray(request.bids)) {
+          for (let i = 0; i < request.bids.length; i++) {
+            setRequestPropsFilter(request.bids[i], props);
+          }          
         } else if (bidderRequest) {
           /*debugger;
           setRequestPropsFilter(bidderRequest, props);

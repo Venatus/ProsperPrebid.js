@@ -190,9 +190,9 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels }
 
   function auctionDone() {
     // when all bidders have called done callback atleast once it means auction is complete
-    utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
-    bidsBackAdUnit();
+    utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);    
     _auctionStatus = AUCTION_COMPLETED;
+    bidsBackAdUnit();
     executeCallback(false, true);
   }
 
@@ -233,8 +233,10 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels }
         } else {
           debugger;
         }
-      } else if (auctionTimedOut) {
-        // debugger;
+      } else if (auctionTimedOut || _auctionStatus == AUCTION_COMPLETED) {
+        if(_auctionStatus == AUCTION_COMPLETED){
+          debugger;
+        }
         return normalizeResponse(createBid(CONSTANTS.STATUS.TIMEOUT, request), request, bidder);
       }
       utils.logInfo('could not resolve response for: ' + bidder.bidderCode + ' timeout: ' + auctionTimedOut, bidRes, responseMap, request, bidder, adUnitCode, requestId)

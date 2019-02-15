@@ -658,7 +658,7 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   }
 }
 
-function doCallbacksIfTimedout(auctionInstance, bidResponse, last) {
+export function doCallbacksIfTimedout(auctionInstance, bidResponse, last) {
   // TODO: make this configurable, as this tries to steal the JS-(micro)task in favour of just waiting for the timeout to be called
   if (last && bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
     auctionInstance.executeCallback(true);
@@ -666,7 +666,7 @@ function doCallbacksIfTimedout(auctionInstance, bidResponse, last) {
 }
 
 // Add a bid to the auction.
-function addBidToAuction(auctionInstance, bidResponse, last) {
+export function addBidToAuction(auctionInstance, bidResponse, last) {
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
 
@@ -677,28 +677,15 @@ function addBidToAuction(auctionInstance, bidResponse, last) {
 function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded) {
   let addBid = true;
 
-  const bidRequest = getBidRequest(bidResponse.adId, [bidRequests]);
+  const bidderRequest = getBidRequest(bidResponse.requestId, [bidRequests]);
   const videoMediaType =
-    bidRequest && deepAccess(bidRequest, 'mediaTypes.video');
+  bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {
     if (!bidResponse.videoCacheKey) {
       addBid = false;
-      store([bidResponse], function (error, cacheIds) {
-        if (error) {
-          utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-
-          doCallbacksIfTimedout(auctionInstance, bidResponse);
-        } else {
-          bidResponse.videoCacheKey = cacheIds[0].uuid;
-          if (!bidResponse.vastUrl) {
-            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
-          }
-          addBidToAuction(auctionInstance, bidResponse);
-          afterBidAdded();
-        }
-      });
+      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, bidderRequest);
     } else if (!bidResponse.vastUrl) {
       utils.logError('videoCacheKey specified but not required vastUrl for video bid');
       addBid = false;
@@ -724,6 +711,29 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
     addBidToAuction(auctionInstance, bidResponse, last);
   }
 }, 'addBidResponse'); */
+
+const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
+  store([bidResponse], function (error, cacheIds) {
+    if (error) {
+      utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+
+      doCallbacksIfTimedout(auctionInstance, bidResponse);
+    } else {
+      if (cacheIds[0].uuid === '') {
+        utils.logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
+
+        doCallbacksIfTimedout(auctionInstance, bidResponse);
+      } else {
+        bidResponse.videoCacheKey = cacheIds[0].uuid;
+        if (!bidResponse.vastUrl) {
+          bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+        }
+        addBidToAuction(auctionInstance, bidResponse);
+        afterBidAdded();
+      }
+    }
+  });
+}, 'callPrebidCache');
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
 // This should be called before addBidToAuction().

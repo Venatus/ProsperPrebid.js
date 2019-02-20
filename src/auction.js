@@ -200,7 +200,7 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels }
     const bidReq = _bidderRequests;
     const bidRes = _bidsReceived;
 
-    function normalizeResponse(response, request, bidder) {
+    function normalizeResponse(response, request, bidder, adUnitCode) {
       if (!response.cpm) {
         response.cpm = 0;
       }
@@ -217,7 +217,16 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels }
           response.timeToRespond = Math.max(0, request.doneTime - bidder.start);
           //debugger;
         }
+      }
 
+      if (!response.adUnitCode) {
+        response.adUnitCode = adUnitCode;
+      }
+      if (!response.auctionId) {
+        response.auctionId = _auctionId;
+      }
+      if (!response.bidder) {
+        response.bidder = bidder;
       }
       return response;
     }
@@ -226,10 +235,10 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels }
       if (responseMap && responseMap[adUnitCode] && responseMap[adUnitCode][requestId]) {
         return responseMap[adUnitCode][requestId];
       } else if (request && request.doneTime && request.noBids) {
-        return normalizeResponse(createBid(CONSTANTS.STATUS.NO_BID, request), request, bidder);
+        return normalizeResponse(createBid(CONSTANTS.STATUS.NO_BID, request), request, bidder, adUnitCode);
       } else if (bidder && bidder.doneTime && bidder.noBids) { // parent of request?
         if (bidder.bids && bidder.bids.length > 0) {
-          return normalizeResponse(createBid(CONSTANTS.STATUS.NO_BID, bidder.bids[0]), bidder.bids[0], bidder);
+          return normalizeResponse(createBid(CONSTANTS.STATUS.NO_BID, bidder.bids[0]), bidder.bids[0], bidder, adUnitCode);
         } else {
           debugger;
         }
@@ -294,6 +303,13 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels }
         }
         if (requests == respones.length) {
           updateMap[adUnit] = { bids: respones };
+          for (let i = 0; i < respones.length; i++) {
+            if (respones[i].getStatusCode() == CONSTANTS.STATUS.TIMEOUT || respones[i].getStatusCode() == CONSTANTS.STATUS.NO_BID) {
+              events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, respones[i]);
+              events.emit(CONSTANTS.EVENTS.BID_RESPONSE, respones[i]);
+              _bidsReceived.push(respones[i]); // should only be enabled when debugging/being request?!
+            }
+          }
           if (!_adUnitsDone[adUnit]) {
             logMessage("adunit IS ready: " + adUnit + " " + requests + "/" + respones.length + " " + (timestamp() - _auctionStart) + 'ms');
             events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, updateMap, [adUnit]);

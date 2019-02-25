@@ -21,6 +21,7 @@ const utils = require('./utils.js');
 const adapterManager = require('./adapterManager').default;
 const events = require('./events');
 const { triggerUserSyncs } = userSync;
+const resetGDPRConsent = require('../modules/consentManagement').resetConsentData;
 
 /* private variables */
 const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
@@ -757,6 +758,8 @@ $$PREBID_GLOBAL$$.getConfig = config.getConfig;
  * ```
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
+
+$$PREBID_GLOBAL$$.resetGDPRConsent = resetGDPRConsent;
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 

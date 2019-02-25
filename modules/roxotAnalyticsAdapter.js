@@ -117,7 +117,10 @@ function extractAdUnitCode(args) {
 }
 
 function extractBidder(args) {
-  return args.bidder.toLowerCase();
+  if (args.bidder.toLowerCase) {
+    return args.bidder.toLowerCase();
+  }
+  return null;
 }
 
 function buildAdUnitAuctionEntity(auction, bidRequest) {
@@ -316,7 +319,9 @@ let roxotAdapter = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}
         handleBidRequested(args);
         break;
       case BID_ADJUSTMENT:
-        handleBidAdjustment(args);
+        if (args.getStatusCode() == 1) {
+          handleBidAdjustment(args);
+        }
         break;
       case BIDDER_DONE:
         handleBidderDone(args);

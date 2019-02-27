@@ -19,6 +19,7 @@ const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
+const DEFAULT_THREAD_EMPTYBIDS_AS_BIDS = false;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -169,6 +170,14 @@ export function newConfig() {
       },
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
+      },
+
+      _threadEmptyBidsAsBids: DEFAULT_THREAD_EMPTYBIDS_AS_BIDS,
+      get threadEmptyBidsAsBids() {
+        return this._threadEmptyBidsAsBids;
+      },
+      set threadEmptyBidsAsBids(val) {
+        this._threadEmptyBidsAsBids = val;
       },
 
     };

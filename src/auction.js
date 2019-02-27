@@ -305,9 +305,11 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels }
           updateMap[adUnit] = { bids: respones };
           for (let i = 0; i < respones.length; i++) {
             if (respones[i].getStatusCode() == CONSTANTS.STATUS.TIMEOUT || respones[i].getStatusCode() == CONSTANTS.STATUS.NO_BID) {
-              events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, respones[i]);
-              events.emit(CONSTANTS.EVENTS.BID_RESPONSE, respones[i]);
-              _bidsReceived.push(respones[i]); // should only be enabled when debugging/being request?!
+              if (config.getConfig('threadEmptyBidsAsBids')) {
+                events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, respones[i]);
+                events.emit(CONSTANTS.EVENTS.BID_RESPONSE, respones[i]);
+                _bidsReceived.push(respones[i]); // should only be enabled when debugging/being request?!
+              }
             }
           }
           if (!_adUnitsDone[adUnit]) {

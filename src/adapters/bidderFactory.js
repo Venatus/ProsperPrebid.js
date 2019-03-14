@@ -8,7 +8,10 @@ import { isValidVideoBid } from '../video';
 import CONSTANTS from '../constants.json';
 import events from '../events';
 import includes from 'core-js/library/fn/array/includes';
-import { logMessage, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, isArray, timestamp } from '../utils';
+import { ajax } from '../ajax';
+import { logMessage, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, isArray, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
+import { ADPOD } from '../mediaTypes';
+import { getHook } from '../hook';
 
 
 /**
@@ -126,6 +129,8 @@ import { logMessage, logWarn, logError, parseQueryStringParameters, delayExecuti
 
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+
+const DEFAULT_REFRESHIN_DAYS = 1;
 
 /**
  * Register a bidder with prebid, using the given spec.
@@ -453,6 +458,73 @@ export function newBidder(spec) {
       return false;
     }
     return true;
+  }
+}
+
+export function preloadBidderMappingFile(fn, adUnits) {
+  if (!config.getConfig('adpod.brandCategoryExclusion')) {
+    return fn.call(this, adUnits);
+  }
+  let adPodBidders = adUnits
+    .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
+    .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
+    .reduce(flatten, [])
+    .filter(uniques);
+
+  adPodBidders.forEach(bidder => {
+    let bidderSpec = adapterManager.getBidAdapter(bidder);
+    if (bidderSpec.getSpec().getMappingFileInfo) {
+      let info = bidderSpec.getSpec().getMappingFileInfo();
+      let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
+      let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
+      let mappingData = getDataFromLocalStorage(key);
+      if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+        ajax(info.url,
+          {
+            success: (response) => {
+              try {
+                response = JSON.parse(response);
+                let mapping = {
+                  lastUpdated: timestamp(),
+                  mapping: response.mapping
+                }
+                setDataInLocalStorage(key, JSON.stringify(mapping));
+              } catch (error) {
+                logError(`Failed to parse ${bidder} bidder translation mapping file`);
+              }
+            },
+            error: () => {
+              logError(`Failed to load ${bidder} bidder translation file`)
+            }
+          },
+        );
+      }
+    }
+  });
+  fn.call(this, adUnits);
+}
+
+getHook('checkAdUnitSetup').before(preloadBidderMappingFile);
+
+/**
+ * Reads the data stored in localstorage and returns iab subcategory
+ * @param {string} bidderCode bidderCode
+ * @param {string} category bidders category
+ */
+export function getIabSubCategory(bidderCode, category) {
+  let bidderSpec = adapterManager.getBidAdapter(bidderCode);
+  if (bidderSpec.getSpec().getMappingFileInfo) {
+    let info = bidderSpec.getSpec().getMappingFileInfo();
+    let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getBidderCode();
+    let data = getDataFromLocalStorage(key);
+    if (data) {
+      try {
+        data = JSON.parse(data);
+      } catch (error) {
+        logError(`Failed to parse ${bidderCode} mapping data stored in local storage`);
+      }
+      return (data.mapping[category]) ? data.mapping[category] : null;
+    }
   }
 }
 

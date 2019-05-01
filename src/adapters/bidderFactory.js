@@ -174,7 +174,7 @@ export function newBidder(spec) {
         return;
       }
 
-      const _requestDone = function () { logMessage("calling request DONE " + bidderRequest.bidderCode + " " + (timestamp() - bidderRequest.start) + 'ms ' + (timestamp() - bidderRequest.auctionStart) + 'ms'); if (requestDone) requestDone(); };
+      const _requestDone = function () { logMessage("calling request DONE " + bidderRequest.bidderCode + " " + (timestamp() - bidderRequest.start) + 'ms ' + (timestamp() - bidderRequest.auctionStart) + 'ms'); if (onTimelyResponse) onTimelyResponse(); };
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid, last) {

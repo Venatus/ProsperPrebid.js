@@ -4,6 +4,7 @@ import { config } from '../src/config';
 import { BANNER, NATIVE } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'improvedigital';
+const DEFAULT_SINGLE_REQUEST = true;
 
 export const spec = {
   version: '5.1.0',
@@ -34,7 +35,7 @@ export const spec = {
 
     let idClient = new ImproveDigitalAdServerJSClient('hb');
     let requestParameters = {
-      singleRequestMode: (config.getConfig('improvedigital.singleRequest') === true),
+      singleRequestMode: DEFAULT_SINGLE_REQUEST || (config.getConfig('improvedigital.singleRequest') === true),
       returnObjType: idClient.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT,
       libVersion: this.version
     };

@@ -194,6 +194,11 @@ function getNormalizedBidRequest(bid) {
 
   if (config.getConfig('improvedigital.usePrebidSizes') === true && bid.sizes && bid.sizes.length > 0) {
     normalizedBidRequest.format = bid.sizes;
+  } else if(bid.params && bid.params.mergeSizes && bid.params.mergeSizes.length > 0) {
+    normalizedBidRequest.format = bid.params.mergeSizes;
+    if (bid.sizes && bid.sizes.length > 0) {
+      normalizedBidRequest.format = normalizedBidRequest.format.concat(bid.sizes);
+    }
   } else if (singleSizeFilter && singleSizeFilter.w && singleSizeFilter.h) {
     normalizedBidRequest.size = {};
     normalizedBidRequest.size.h = singleSizeFilter.h;

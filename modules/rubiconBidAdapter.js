@@ -25,6 +25,7 @@ var sizeMap = {
   14: '250x250',
   15: '300x250',
   16: '336x280',
+  17: '240x400',
   19: '300x100',
   31: '980x120',
   32: '250x360',
@@ -81,7 +82,9 @@ var sizeMap = {
   221: '1x1',
   229: '320x180',
   232: '580x400',
-  257: '400x600'
+  257: '400x600',
+  265: '1920x1080',
+  288: '640x380'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -157,6 +160,10 @@ export const spec = {
             }
           }
         }
+      }
+      const bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+      if (!isNaN(bidFloor)) {
+        data.imp[0].bidfloor = bidFloor;
       }
       // if value is set, will overwrite with same value
       data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest)

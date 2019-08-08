@@ -60,6 +60,10 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
         };
       }
 
+      if (url.indexOf('http') != 0 && url.indexOf('blob:') != 0) {
+        url = 'https:' + url;
+      }
+
       if (method === 'GET' && data) {
         let urlInfo = parseURL(url, options);
         Object.assign(urlInfo.search, data);

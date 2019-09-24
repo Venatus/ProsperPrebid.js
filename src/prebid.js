@@ -64,10 +64,10 @@ function checkDefinedPlacement(id) {
 }
 
 function setRenderSize(doc, width, height) {
-  if (doc.defaultView && doc.defaultView.frameElement) {
+  /*if (doc.defaultView && doc.defaultView.frameElement) {
     doc.defaultView.frameElement.width = width;
     doc.defaultView.frameElement.height = height;
-  }
+  }*/
 }
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {

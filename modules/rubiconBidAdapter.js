@@ -218,7 +218,10 @@ export const spec = {
       }
     });
 
-    if (config.getConfig('rubicon.singleRequest') !== true) {
+    var singleRequest = config.getConfig('rubicon.singleRequest');
+    //debugger;
+
+    if (typeof (singleRequest) != 'undefined' && singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
@@ -504,6 +507,7 @@ export const spec = {
     }
 
     // check the ad response
+    //TODO: check browser compatibility with Array.isArray and change to isArray Wrapper!    
     if (!Array.isArray(ads) || ads.length < 1) {
       return [];
     }
@@ -527,6 +531,14 @@ export const spec = {
           netRevenue: config.getConfig('rubicon.netRevenue') || false,
           rubicon: {
             advertiserId: ad.advertiser, networkId: ad.network
+          },
+          bidData: {
+            dsp: ad.network,
+            advertiserId: ad.advertiser,
+            campaignId: ad.campaign_id,
+            creativeId: ad.creative_id,
+            rtbRuleId: ad.rtb_rule_id,
+            seatId: ad.seat,
           }
         };
 

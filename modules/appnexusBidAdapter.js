@@ -363,6 +363,12 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       buyerMemberId: rtbBid.buyer_member_id,
       dealPriority: rtbBid.deal_priority,
       dealCode: rtbBid.deal_code
+    },
+    bidData: {
+      dsp: rtbBid.buyer_member_id,
+      advertiserId: rtbBid.advertiser_id,
+      brandCategoryId: rtbBid.buyer_member_id,
+      creativeId: rtbBid.creative_id,
     }
   };
 

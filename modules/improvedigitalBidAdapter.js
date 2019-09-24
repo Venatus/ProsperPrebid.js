@@ -128,6 +128,11 @@ export const spec = {
         }
       }
 
+      bid.bidData = {
+        advertiserId: bidObject.advid,
+        creativeId: ((bidObject.crid == '0') ? bidObject.cid : bidObject.crid)
+      }
+
       bids.push(bid);
     });
     return bids;

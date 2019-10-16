@@ -1,9 +1,11 @@
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
+import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const BIDDER_CODE = 'outcon';
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     return !!((bid.params.pod || (bid.params.internalId && bid.params.publisher)) && bid.params.env);
   },

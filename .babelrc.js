@@ -16,7 +16,7 @@ module.exports = {
       {
         "targets": {
           "browsers": [
-            "chrome >= 61",
+            "chrome >= 30",
             "safari >=8",
             "edge >= 14",
             "ff >= 57",

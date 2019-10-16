@@ -14,14 +14,14 @@ import { hook } from './hook';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
-const DEFAULT_BIDDER_TIMEOUT = 3000;
+const DEFAULT_BIDDER_TIMEOUT = 30000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_THREAD_EMPTYBIDS_AS_BIDS = false;
 
-const DEFAULT_TIMEOUTBUFFER = 400;
+const DEFAULT_TIMEOUTBUFFER = 4000;
 
 export const RANDOM = 'random';
 const FIXED = 'fixed';

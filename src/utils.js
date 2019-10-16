@@ -360,10 +360,10 @@ export function logError() {
 
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
-  prefix && args.unshift(prefix);
+  /*prefix && args.unshift(prefix);
   args.unshift('display: inline-block; color: #fff; background: #3b88c3; padding: 1px 4px; border-radius: 3px;');
-  args.unshift('%cPrebid');
-  return args;
+  args.unshift('%cPrebid');*/
+  return [args.join(" ")];
 }
 
 export function hasConsoleLogger() {

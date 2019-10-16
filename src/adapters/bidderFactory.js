@@ -13,7 +13,6 @@ import { logMessage, logWarn, logError, parseQueryStringParameters, delayExecuti
 import { ADPOD } from '../mediaTypes';
 import { getHook } from '../hook';
 
-
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
  *

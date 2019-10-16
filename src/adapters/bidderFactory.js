@@ -9,7 +9,7 @@ import CONSTANTS from '../constants.json';
 import events from '../events';
 import includes from 'core-js/library/fn/array/includes';
 import { ajax } from '../ajax';
-import { logMessage, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, isArray, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess, isArray } from '../utils';
 import { ADPOD } from '../mediaTypes';
 import { getHook } from '../hook';
 
@@ -164,89 +164,20 @@ export function registerBidder(spec) {
  */
 export function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
-    getSpec: function () {
+    getSpec: function() {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function (bidderRequest, addBidResponse, done, ajax, requestDone) {
-      if (!isArray(bidderRequest.bids)) {
+    callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse) {
+      if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
 
-      const _requestDone = function () { logMessage("calling request DONE " + bidderRequest.bidderCode + " " + (timestamp() - bidderRequest.start) + 'ms ' + (timestamp() - bidderRequest.auctionStart) + 'ms'); if (requestDone) requestDone(); };
-
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode, bid, last) {
+      function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
-        bidderRequest.doneTime = timestamp();
         if (isValid(adUnitCode, bid, [bidderRequest])) {
-          addBidResponse(adUnitCode, bid, last);
-        }
-        if (last) {
-          _requestDone();
-        }
-      }
-
-      function setRequestPropsFilter(requestObj, props) {
-        for (let i in props) {
-          switch (i) {
-            case 'doneTime':
-              if (!requestObj[i]) {
-                requestObj[i] = props[i];
-              }
-              break;
-            default:
-              requestObj[i] = props[i];
-          }
-        }
-      }
-      function setRequestProps(request, props) {
-        //two possible options here? 
-        if (request.bidRequest) {
-          setRequestPropsFilter(request.bidRequest, props);
-        } else if (request.bidderRequest) {
-          setRequestPropsFilter(request.bidderRequest, props);
-        } else if (request.bidRequests) {
-          if(isArray(request.bidRequests)) {
-            for(let i=0; i<request.bidRequests.length;i++) {
-              setRequestPropsFilter(request.bidRequests[i], props);
-            }
-          }else{
-            setRequestPropsFilter(request.bidRequests, props);
-          }
-        } else if (request.bids && isArray(request.bids)) {
-          for (let i = 0; i < request.bids.length; i++) {
-            setRequestPropsFilter(request.bids[i], props);
-          }          
-        } else if (bidderRequest) {
-          /*debugger;
-          setRequestPropsFilter(bidderRequest, props);
-          if(bidderRequest.bids){
-            for(let i=0;i<bidderRequest.bids.length;i++){
-              setRequestPropsFilter(bidderRequest.bids[i], props);
-            }
-          }*/
-        }
-      }
-
-      function markRequestDoneWithNoBids(request) {
-        setRequestProps(request, {
-          doneTime: timestamp(),
-          noBids: true,
-        });
-      }
-
-      function handleResponse(bids, request) {
-        //TODO: delegate onResponse handling to after this call via this call
-        //debugger;
-        logMessage(bidderRequest);
-        /*if(bidderRequest.bids[0].adUnitCode.indexOf('p5_0_2') !=-1 && !request.bidRequest && !request.bidderRequest){
-          debugger;
-        }*/
-        logMessage("handleResponse Done ", request, bids);
-        if (!bids || bids.length == 0) {
-          markRequestDoneWithNoBids(request);
-          _requestDone();
+          addBidResponse(adUnitCode, bid);
         }
       }
 
@@ -260,17 +191,7 @@ export function newBidder(spec) {
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
-      const invalidBidRequests = bidderRequest.bids.filter((bid) => {
-        if (validBidRequests.indexOf(bid) === -1) {
-          return true;
-        }
-        return false;
-      });
-      invalidBidRequests.forEach(bid => {
-        markRequestDoneWithNoBids({ bidRequest: bid });
-      });
       if (validBidRequests.length === 0) {
-        handleResponse([], { bidderRequest: bidderRequest });
         afterAllResponses();
         return;
       }
@@ -285,7 +206,6 @@ export function newBidder(spec) {
 
       let requests = spec.buildRequests(validBidRequests, bidderRequest);
       if (!requests || requests.length === 0) {
-        handleResponse([], { bidderRequest: bidderRequest });
         afterAllResponses();
         return;
       }
@@ -308,14 +228,6 @@ export function newBidder(spec) {
       }
 
       function processRequest(request) {
-        if (!request.bidRequest && !request.bidderRequest && request.bidId) {
-          if (bidRequestMap[request.bidId]) {
-            request.bidRequest = bidRequestMap[request.bidId];
-          }
-        }
-        /*if(!request.bidRequest && !request.bidderRequest && bidderRequest.bidderCode == 'ix'){
-          debugger;
-        }*/
         switch (request.method) {
           case 'GET':
             ajax(
@@ -348,7 +260,6 @@ export function newBidder(spec) {
             break;
           default:
             logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
-            handleResponse([], request);
             onResponse();
         }
 
@@ -356,6 +267,8 @@ export function newBidder(spec) {
         // If the adapter code fails, no bids should be added. After all the bids have been added, make
         // sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response, responseObj) {
+          onTimelyResponse(spec.code);
+
           try {
             response = JSON.parse(response);
           } catch (e) { /* response might not be JSON... that's ok. */ }
@@ -372,50 +285,30 @@ export function newBidder(spec) {
             bids = spec.interpretResponse(response, request);
           } catch (err) {
             logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
-            handleResponse([], request);
             onResponse();
             return;
           }
 
           if (bids) {
-            let bidIds;
-            if (bids.reduce) {
-              bidIds = bids.reduce((ids, bid) => {
-                ids.push(bid.requestId);
-                return ids;
-              }, []);
-            } else {
-              bidIds = [bids.requestId];
-            }
-            markNoBidsUsingRequestMap(bidIds);
-
-            if (bids.forEach) {
+            if (isArray(bids)) {
               bids.forEach(addBidUsingRequestMap);
             } else {
-              addBidUsingRequestMap(bids, 0, [bids]);//fake triggering last element
+              addBidUsingRequestMap(bids);
             }
           }
-          handleResponse(bids, request);
           onResponse(bids);
 
-          function markNoBidsUsingRequestMap(bidResponseIds) {
-            for (var id in bidRequestMap) {
-              if (!includes(bidResponseIds, id)) {
-                markRequestDoneWithNoBids({ bidRequest: bidRequestMap[id] });//could flag "twice" when the adepter only has 1 bid request via handleResponseCall later on
-              }
-            }
-          }
-          function addBidUsingRequestMap(bid, index, array) {
+          function addBidUsingRequestMap(bid) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
               const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
-              addBidWithCode(bidRequest.adUnitCode, prebidBid, array.length - 1 === index);
+              addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
             }
           }
 
-          function headerParser(xmlHttpResponse) {//xmlHttpResponse not used?
+          function headerParser(xmlHttpResponse) {
             return {
               get: responseObj.getResponseHeader.bind(responseObj)
             };
@@ -425,8 +318,9 @@ export function newBidder(spec) {
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
         // call onResponse() so that we're one step closer to calling done().
         function onFailure(err) {
+          onTimelyResponse(spec.code);
+
           logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
-          handleResponse([], request);
           onResponse();
         }
       }
@@ -529,7 +423,9 @@ export function getIabSubCategory(bidderCode, category) {
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, bidRequests) {
-  if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+  if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
+    bid.width = parseInt(bid.width, 10);
+    bid.height = parseInt(bid.height, 10);
     return true;
   }
 
@@ -541,9 +437,9 @@ function validBidSize(adUnitCode, bid, bidRequests) {
   // if a banner impression has one valid size, we assign that size to any bid
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
-    const [width, height] = parsedSizes[0].split('x');
-    bid.width = width;
-    bid.height = height;
+    const [ width, height ] = parsedSizes[0].split('x');
+    bid.width = parseInt(width, 10);
+    bid.height = parseInt(height, 10);
     return true;
   }
 

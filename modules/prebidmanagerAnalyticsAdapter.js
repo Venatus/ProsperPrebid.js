@@ -24,9 +24,16 @@ var pmAnalyticsEnabled = false;
 var w = window;
 var d = document;
 var e = d.documentElement;
-var g = d.getElementsByTagName('body')[0];
-var x = w.innerWidth || e.clientWidth || g.clientWidth;
-var y = w.innerHeight || e.clientHeight || g.clientHeight;
+var x, y;
+try {
+  var g = d.getElementsByTagName('body')[0];
+  x = w.innerWidth || e.clientWidth || g.clientWidth;
+  y = w.innerHeight || e.clientHeight || g.clientHeight;
+} catch (e) {
+  // body might not exist if we're in the header
+  x = w.innerWidth || e.clientWidth;
+  y = w.innerHeight || e.clientHeight;
+}
 
 var _pageView = {
   eventType: 'pageView',

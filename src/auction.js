@@ -249,7 +249,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
         }
       } else if (auctionTimedOut || _auctionStatus == AUCTION_COMPLETED) {
         if(_auctionStatus == AUCTION_COMPLETED){
-          debugger;
+          //debugger;
         }
         return normalizeResponse(createBid(CONSTANTS.STATUS.TIMEOUT, request), request, bidder);
       }

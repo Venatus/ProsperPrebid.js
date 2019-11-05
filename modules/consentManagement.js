@@ -21,6 +21,7 @@ export let userCMP;
 export let consentTimeout;
 export let allowAuction;
 export let staticConsentData;
+export let enablePolling=true;
 
 let consentData;
 let addedConsentHook = false;
@@ -111,7 +112,11 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
       }
       utils.logInfo(`CMP framework calling directly for consent data didCalls: ` + didCall + ' hookConfig.exit: ' + hookConfig.haveExited);
       if (didCall && !hookConfig.haveExited) {
-        setTimeout(tryDelegate, 40);
+        if(enablePolling){
+          setTimeout(tryDelegate, 40);
+        }else{
+          //debugger;
+        }
       }
     }
     tryDelegate();
@@ -385,6 +390,9 @@ export function setConsentConfig(config) {
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
     utils.logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
+  }
+  if (utils.isBoolean(config.enablePolling)) {
+    enablePolling = config.enablePolling;
   }
 
   if (typeof config.allowAuctionWithoutConsent === 'boolean') {

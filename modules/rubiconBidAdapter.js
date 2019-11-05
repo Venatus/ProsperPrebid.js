@@ -354,6 +354,13 @@ export const spec = {
     bidRequest.startTime = new Date().getTime();
 
     const params = bidRequest.params;
+    if (!params.position && bidRequest.spec && bidRequest.spec.visibility) {
+      if (bidRequest.spec.isVisible) {
+        params.position = 'atf';
+      } else {
+        params.position = 'btf';
+      }
+    }
 
     // use rubicon sizes if provided, otherwise adUnit.sizes
     const parsedSizes = parseSizes(bidRequest, 'banner');
@@ -507,7 +514,7 @@ export const spec = {
     }
 
     // check the ad response
-    //TODO: check browser compatibility with Array.isArray and change to isArray Wrapper!    
+    // TODO: check browser compatibility with Array.isArray and change to isArray Wrapper!    
     if (!Array.isArray(ads) || ads.length < 1) {
       return [];
     }

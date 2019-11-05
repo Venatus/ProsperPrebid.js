@@ -484,6 +484,14 @@ function bidToTag(bid) {
   if (bid.params.position) {
     tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
   }
+  if (!tag.position && bid.spec && bid.spec.visibility) {
+    if (bid.spec.isVisible) {
+      tag.position = 1;
+    } else {
+      tag.position = 2;
+    }
+  }
+
   if (bid.params.trafficSourceCode) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
   }

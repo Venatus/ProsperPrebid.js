@@ -380,7 +380,7 @@ export function newBidder(spec) {
             return;
           }
 
-          if (bids) {
+          if (bids && isArray(bids)) {
             let bidIds;
             if (bids.reduce) {
               bidIds = bids.reduce((ids, bid) => {

@@ -308,15 +308,23 @@ function cmpFailed(errMsg, hookConfig, extraArgs) {
 }
 
 /**
- * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
- * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only)
+ * Transforms CMP data locally in module and transforms it to a compatible gdprDataHandler.setConsentData() formant
+ * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only), expected properties getConsentData {consentData, gdprApplies} and getVendorConsents 
  */
-function storeConsentData(cmpConsentObject) {
-  consentData = {
+function getStoreConsentData(cmpConsentObject) {
+  return {
     consentString: (cmpConsentObject) ? cmpConsentObject.getConsentData.consentData : undefined,
     vendorData: (cmpConsentObject) ? cmpConsentObject.getVendorConsents : undefined,
     gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : undefined
   };
+}
+
+/**
+ * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
+ * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only)
+ */
+function storeConsentData(cmpConsentObject) {
+  consentData = getStoreConsentData(cmpConsentObject);
   gdprDataHandler.setConsentData(consentData);
 }
 
@@ -403,7 +411,6 @@ export function setConsentConfig(config) {
   }
 
   utils.logInfo('consentManagement module has been activated...');
-
   if (userCMP === 'static') {
     if (utils.isPlainObject(config.consentData)) {
       staticConsentData = config.consentData;

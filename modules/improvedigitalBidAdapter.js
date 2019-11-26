@@ -216,7 +216,11 @@ function getNormalizedBidRequest(bid) {
   }
 
   if (config.getConfig('improvedigital.usePrebidSizes') === true && bid.sizes && bid.sizes.length > 0) {
-    normalizedBidRequest.format = bid.sizes;
+    if (bid.params.overwriteSizes && utils.isArray(bid.params.overwriteSizes)) {
+      normalizedBidRequest.format = bid.params.overwriteSizes;
+    } else {
+      normalizedBidRequest.format = bid.sizes;
+    }
   } else if(bid.params && bid.params.mergeSizes && bid.params.mergeSizes.length > 0) {
     normalizedBidRequest.format = bid.params.mergeSizes;
     if (bid.sizes && bid.sizes.length > 0) {

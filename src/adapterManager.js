@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest } from './utils';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils';
 import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
@@ -100,7 +100,9 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
               bidderRequestId,
               auctionId,
               src,
-              bidRequestsCount: adunitCounter.getCounter(adUnit.code),
+              bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
+              bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
+              bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
             }));
           }
           return bids;
@@ -169,6 +171,16 @@ export let gdprDataHandler = {
   },
   getConsentData: function () {
     return gdprDataHandler.consentData;
+  }
+};
+
+export let uspDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    uspDataHandler.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return uspDataHandler.consentData;
   }
 };
 
@@ -291,6 +303,12 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
       bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
     });
   }
+
+  if (uspDataHandler.getConsentData()) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['uspConsent'] = uspDataHandler.getConsentData();
+    });
+  }
   return bidRequests;
 };
 
@@ -352,6 +370,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           responseDone
         );
       }
+    } else {
+      utils.logError('missing ' + _s2sConfig.adapter);
     }
   }
 
@@ -366,9 +386,21 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    adapter.callBids(bidRequest, addBidResponse.bind(bidRequest), doneCb.bind(bidRequest), ajax, onTimelyResponse);
+    config.runWithBidder(
+      bidRequest.bidderCode,
+      bind.call(
+        adapter.callBids,
+        adapter,
+        bidRequest,
+        addBidResponse.bind(bidRequest),
+        doneCb.bind(bidRequest),
+        ajax,
+        onTimelyResponse,
+        config.callbackWithBidder(bidRequest.bidderCode)
+      )
+    );
   });
-}
+};
 
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;
@@ -493,7 +525,7 @@ function tryCallBidderMethod(bidder, method, param) {
     const spec = adapter.getSpec();
     if (spec && spec[method] && typeof spec[method] === 'function') {
       utils.logInfo(`Invoking ${bidder}.${method}`);
-      spec[method](param);
+      config.runWithBidder(bidder, bind.call(spec[method], spec, param));
     }
   } catch (e) {
     utils.logWarn(`Error calling ${method} of ${bidder}`);
@@ -517,6 +549,7 @@ adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeou
 adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
+  adunitCounter.incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 

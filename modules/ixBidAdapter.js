@@ -128,6 +128,12 @@ function parseBid(rawBid, currency, bidRequest) {
   bid.meta.brandId = utils.deepAccess(rawBid, 'ext.advbrandid');
   bid.meta.brandName = utils.deepAccess(rawBid, 'ext.advbrand');
 
+  bid.bidData = {
+    dsp: bid.meta.networkId,
+    brandId: bid.meta.brandId,
+    brandName: bid.meta.brandName
+  }
+
   return bid;
 }
 

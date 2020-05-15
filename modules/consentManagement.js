@@ -10,8 +10,8 @@ import { gdprDataHandler } from '../src/adapterManager.js';
 import includes from 'core-js/library/fn/array/includes.js';
 import strIncludes from 'core-js/library/fn/string/includes.js';
 
-const CONSTANTS = require('src/constants.json');
-const events = require('src/events');
+const CONSTANTS = require('../src/constants.json');
+const events = require('../src/events.js');
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -22,7 +22,7 @@ export let consentTimeout;
 export let allowAuction;
 export let gdprScope;
 export let staticConsentData;
-export let enablePolling=true;
+export let enablePolling = true;
 
 let cmpVersion = 0;
 let consentData;
@@ -114,7 +114,6 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function handleV1CmpResponseCallbacks() {
     const cmpResponse = {};
 
-
     function afterEach() {
       utils.logInfo(`CMP framework completecheck: `, !!(cmpResponse.getConsentData && cmpResponse.getVendorConsents));
       if (cmpResponse.getConsentData && cmpResponse.getVendorConsents) {
@@ -163,8 +162,26 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   if (utils.isFn(cmpFunction)) {
     utils.logInfo('Detected CMP API is directly accessible, calling it now...');
     if (cmpVersion === 1) {
-      cmpFunction('getConsentData', null, v1CallbackHandler.consentDataCallback);
-      cmpFunction('getVendorConsents', null, v1CallbackHandler.vendorConsentsCallback);
+      let tryDelegate = function () {
+        let didCall = false;
+        if (!callbackHandler.hasConsentData()) {
+          cmpFunction('getConsentData', null, v1CallbackHandler.consentDataCallback);
+          didCall = true;
+        }
+        if (!callbackHandler.hasVendorConsentData()) {
+          cmpFunction('getVendorConsents', null, v1CallbackHandler.vendorConsentsCallback);
+          didCall = true;
+        }
+        utils.logInfo(`CMP framework calling directly for consent data didCalls: ` + didCall + ' hookConfig.exit: ' + hookConfig.haveExited);
+        if (didCall && !hookConfig.haveExited) {
+          if (enablePolling) {
+            setTimeout(tryDelegate, 40);
+          } else {
+            // debugger;
+          }
+        }
+      }
+      tryDelegate();
     } else if (cmpVersion === 2) {
       cmpFunction('addEventListener', cmpVersion, v2CmpResponseCallback);
     }
@@ -210,7 +227,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 
   function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
-    //TODO: improve lookup by first walking the parent tree, to see if a friendly __cmp exists before checking for the __cmpLocator
+    // TODO: improve lookup by first walking the parent tree, to see if a friendly __cmp exists before checking for the __cmpLocator
     let apiName = (cmpVersion === 2) ? '__tcfapi' : '__cmp';
 
     /* Setup up a __cmp function to do the postMessage and stash the callback.
@@ -272,6 +289,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   };
 
   // in case we already have consent (eg during bid refresh)
+  debugger;
   if (consentData) {
     utils.logInfo('User consent information already known.  Pulling internally stored information...');
     return exitModule(null, hookConfig);
@@ -391,14 +409,7 @@ function storeConsentData(cmpConsentObject) {
     };
   }
   consentData.apiVersion = cmpVersion;
-}
-
-/**
- * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
- * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only)
- */
-function storeConsentData(cmpConsentObject) {
-  consentData = getStoreConsentData(cmpConsentObject);
+  debugger;
   gdprDataHandler.setConsentData(consentData);
 }
 
@@ -427,6 +438,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
     let args = hookConfig.args;
     let nextFn = hookConfig.nextFn;
 
+    debugger;
     if (errMsg) {
       events.emit(CONSTANTS.EVENTS.CMP_FAILED, { errMsg: errMsg });
       if (allowAuction) {
@@ -455,6 +467,10 @@ export function resetConsentData() {
   userCMP = undefined;
   cmpVersion = 0;
   gdprDataHandler.setConsentData(null);
+  debugger;
+  if (hookConfig) {
+    hookConfig.haveExited = false;
+  }
 }
 
 /**

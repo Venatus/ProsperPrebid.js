@@ -69,6 +69,8 @@ import find from 'core-js/library/fn/array/find.js';
 import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
 
+import { createBid } from './bidfactory.js';
+
 const { syncUsers } = userSync;
 const utils = require('./utils.js');
 const adapterManager = require('./adapterManager.js').default;
@@ -161,7 +163,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       clearTimeout(_timer);
     }
 
-    //if (_callback != null) {//not sure why this is dependent on the existance of a callback? is it used as state, since it's resetted after this call to prevent double calling
+    // if (_callback != null) {//not sure why this is dependent on the existence of a callback? is it used as state, since it's reset-ed after this call to prevent double calling
     if (_auctionEnd === undefined) {
       let timedOutBidders = [];
       if (timedOut) {

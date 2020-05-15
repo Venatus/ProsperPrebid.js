@@ -9,7 +9,7 @@ import CONSTANTS from '../constants.json';
 import events from '../events.js';
 import includes from 'core-js/library/fn/array/includes.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
+import { logMessage, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';

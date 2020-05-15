@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 
-import clone from 'just-clone';//NOTE: made custom clone method, to allow an additional callback, to filter properties
+// import clone from 'just-clone';// NOTE: made custom clone method, to allow an additional callback, to filter properties
 /*
 function clone(obj, cb) {
   var result = Array.isArray(obj) ? [] : {};
   for (var key in obj) {
     if(cb && cb.call && cb(obj, result, key, clone)) continue; //allow callback for special property handling
-    // include prototype properties    
+    // include prototype properties
     var value = obj[key];
     if (value && typeof value == 'object') {
       result[key] = clone(value, cb);
@@ -21,6 +21,22 @@ function clone(obj, cb) {
 import deepequal from 'deep-equal';
 import find from 'core-js/library/fn/array/find.js';
 import includes from 'core-js/library/fn/array/includes.js';
+
+// Manual import of 'just-clone' see line 3
+function clone(obj, cb) {
+  var result = Array.isArray(obj) ? [] : {};
+  for (var key in obj) {
+    if (cb && cb.call && cb(obj, result, key, clone)) continue; // allow callback for special property handling
+    // include prototype properties
+    var value = obj[key];
+    if (value && typeof value == 'object') {
+      result[key] = clone(value, cb);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
 
 const CONSTANTS = require('./constants.json');
 

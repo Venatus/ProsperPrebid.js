@@ -121,11 +121,11 @@ const hookedGetBids = hook('sync', getBids, 'getBids');
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
   let adUnitsCopy = utils.deepClone(adUnits, (obj, result, key, clone) => {
-    if (key[0] == '_') {//props prefixed an underscore, will not be cloned!
+    if (key[0] == '_') {// props prefixed an underscore, will not be cloned!
       result[key] = obj[key];
       return true;
     }
-    return false;//normal clone
+    return false;// normal clone
   });
 
   adUnitsCopy.forEach((adUnit) => {
@@ -148,11 +148,11 @@ function getAdUnitCopyForPrebidServer(adUnits) {
 
 function getAdUnitCopyForClientAdapters(adUnits) {
   let adUnitsClientCopy = utils.deepClone(adUnits, (obj, result, key, clone) => {
-    if (key[0] == '_') {//props prefixed an underscore, will not be cloned!
+    if (key[0] == '_') {// props prefixed an underscore, will not be cloned!
       result[key] = obj[key];
       return true;
     }
-    return false;//normal clone
+    return false;// normal clone
   });
   // filter out s2s bids
   adUnitsClientCopy.forEach((adUnit) => {
@@ -166,6 +166,7 @@ function getAdUnitCopyForClientAdapters(adUnits) {
     return adUnit.bids.length !== 0;
   });
 
+  // debugger;
   return adUnitsClientCopy;
 }
 
@@ -244,12 +245,15 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
         bidderRequestId,
         tid,
         bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy, (obj, result, key, clone) => {
-            if (key[0] == '_') {//props prefixed an underscore, will not be cloned!
-              result[key] = obj[key];
-              return true;
-            }
-            return false;//normal clone
-          }), labels, src: CONSTANTS.S2S.SRC}),
+          if (key[0] == '_') {// props prefixed an underscore, will not be cloned!
+            result[key] = obj[key];
+            return true;
+          }
+          return false;// normal clone
+        }),
+        labels,
+        src: CONSTANTS.S2S.SRC
+        }),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC,

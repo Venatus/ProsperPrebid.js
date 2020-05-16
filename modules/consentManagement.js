@@ -292,8 +292,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     timer: null
   };
 
-  // in case we already have consent (eg during bid refresh)
-  debugger;
+  // in case we already have consent (eg during bid refresh)  
   if (consentData) {
     utils.logInfo('User consent information already known.  Pulling internally stored information...');
     return exitModule(null, hookConfig);
@@ -416,7 +415,6 @@ function storeConsentData(cmpConsentObject) {
     };
   }
   consentData.apiVersion = cmpVersion;
-  debugger;
   gdprDataHandler.setConsentData(consentData);
 }
 
@@ -445,7 +443,6 @@ function exitModule(errMsg, hookConfig, extraArgs) {
     let args = hookConfig.args;
     let nextFn = hookConfig.nextFn;
 
-    debugger;
     if (errMsg) {
       events.emit(CONSTANTS.EVENTS.CMP_FAILED, { errMsg: errMsg });
       if (allowAuction) {

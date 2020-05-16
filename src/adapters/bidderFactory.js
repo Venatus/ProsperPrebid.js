@@ -204,7 +204,7 @@ export function newBidder(spec) {
         }
       }
       function setRequestProps(request, props) {
-        //two possible options here? 
+        // two possible options here? 
         if (request.bidRequest) {
           setRequestPropsFilter(request.bidRequest, props);
         } else if (request.bidderRequest) {
@@ -222,13 +222,13 @@ export function newBidder(spec) {
             setRequestPropsFilter(request.bids[i], props);
           }          
         } else if (bidderRequest) {
-          /*debugger;
+          /* debugger;
           setRequestPropsFilter(bidderRequest, props);
           if(bidderRequest.bids){
             for(let i=0;i<bidderRequest.bids.length;i++){
               setRequestPropsFilter(bidderRequest.bids[i], props);
             }
-          }*/
+          } */
         }
       }
 

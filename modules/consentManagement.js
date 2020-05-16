@@ -7,8 +7,8 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import strIncludes from 'core-js/library/fn/string/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const CONSTANTS = require('../src/constants.json');
 const events = require('../src/events.js');
@@ -164,11 +164,11 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     if (cmpVersion === 1) {
       let tryDelegate = function () {
         let didCall = false;
-        if (!callbackHandler.hasConsentData()) {
+        if (!v1CallbackHandler.hasConsentData()) {
           cmpFunction('getConsentData', null, v1CallbackHandler.consentDataCallback);
           didCall = true;
         }
-        if (!callbackHandler.hasVendorConsentData()) {
+        if (!v1CallbackHandler.hasVendorConsentData()) {
           cmpFunction('getVendorConsents', null, v1CallbackHandler.vendorConsentsCallback);
           didCall = true;
         }
@@ -227,7 +227,6 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 
   function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
-    // TODO: improve lookup by first walking the parent tree, to see if a friendly __cmp exists before checking for the __cmpLocator
     let apiName = (cmpVersion === 2) ? '__tcfapi' : '__cmp';
 
     /* Setup up a __cmp function to do the postMessage and stash the callback.

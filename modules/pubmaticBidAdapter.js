@@ -1045,6 +1045,13 @@ export const spec = {
                 newBid.meta.clickUrl = bid.adomain[0];
               }
 
+              // adserverTargeting
+              if (seatbidder.ext && seatbidder.ext.buyid) {
+                newBid.adserverTargeting = {
+                  'hb_buyid_pubmatic': seatbidder.ext.buyid
+                };
+              }
+
               bidResponses.push(newBid);
             });
         });

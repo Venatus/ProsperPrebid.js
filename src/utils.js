@@ -1,5 +1,9 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
+// import clone from 'just-clone';
+import deepequal from 'deep-equal';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 // import clone from 'just-clone';// NOTE: made custom clone method, to allow an additional callback, to filter properties
 /*
@@ -18,10 +22,6 @@ function clone(obj, cb) {
   return result;
 }
 */
-import deepequal from 'deep-equal';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
-
 // Manual import of 'just-clone' see line 3
 function clone(obj, cb) {
   var result = Array.isArray(obj) ? [] : {};
@@ -250,7 +250,6 @@ function isValidGPTSingleSize(singleSize) {
   // if we aren't exactly 2 items in this array, it is invalid
   return isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]));
 }
-
 
 export function getWindowTop() {
   return window.top;

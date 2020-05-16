@@ -27,7 +27,7 @@ export const spec = {
     }
 
     if (!isValid) {
-      utils.logWarn('Teads placementId and pageId parameters are required. Bid aborted.');
+      utils.logError('Teads placementId and pageId parameters are required. Bid aborted.');
     }
     return isValid;
   },
@@ -54,7 +54,9 @@ export const spec = {
     if (bidderRequest && gdpr) {
       let isCmp = (typeof gdpr.gdprApplies === 'boolean')
       let isConsentString = (typeof gdpr.consentString === 'string')
-      let status = isCmp ? findGdprStatus(gdpr) : gdprStatus.CMP_NOT_FOUND_OR_ERROR
+      let status = isCmp
+        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData, gdpr.apiVersion)
+        : gdprStatus.CMP_NOT_FOUND_OR_ERROR
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
         status: status,
@@ -86,7 +88,6 @@ export const spec = {
     if (serverResponse.responses) {
       serverResponse.responses.forEach(function (bid) {
         const bidResponse = {
-          bidderCode: spec.code,
           cpm: bid.cpm,
           width: bid.width,
           height: bid.height,
@@ -113,19 +114,20 @@ function getReferrerInfo(bidderRequest) {
   return ref;
 }
 
-function findGdprStatus(gdprConsent) {
-  const gdprApplies = gdprConsent.gdprApplies
-  const gdprData = gdprConsent.vendorData
-  const apiVersion = gdprConsent.apiVersion
-  let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
-  const globalConsent = apiVersion === 1
-    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
-    : !gdprData.isServiceSpecific
-
+function findGdprStatus(gdprApplies, gdprData, apiVersion) {
+  let status = gdprStatus.GDPR_APPLIES_PUBLISHER
   if (gdprApplies) {
-    if (globalConsent) status = gdprStatus.GDPR_APPLIES_GLOBAL
+    if (isGlobalConsent(gdprData, apiVersion)) status = gdprStatus.GDPR_APPLIES_GLOBAL
   } else status = gdprStatus.GDPR_DOESNT_APPLY
   return status;
+}
+
+function isGlobalConsent(gdprData, apiVersion) {
+  return gdprData && apiVersion === 1
+    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
+    : gdprData && apiVersion === 2
+      ? !gdprData.isServiceSpecific
+      : false
 }
 
 function buildRequestObject(bid) {
@@ -133,7 +135,7 @@ function buildRequestObject(bid) {
   let placementId = utils.getValue(bid.params, 'placementId');
   let pageId = utils.getValue(bid.params, 'pageId');
 
-  reqObj.sizes = utils.parseSizesInput(bid.sizes);
+  reqObj.sizes = getSizes(bid);
   reqObj.bidId = utils.getBidIdParameter('bidId', bid);
   reqObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId, 10);
@@ -142,6 +144,33 @@ function buildRequestObject(bid) {
   reqObj.auctionId = utils.getBidIdParameter('auctionId', bid);
   reqObj.transactionId = utils.getBidIdParameter('transactionId', bid);
   return reqObj;
+}
+
+function getSizes(bid) {
+  return utils.parseSizesInput(concatSizes(bid));
+}
+
+function concatSizes(bid) {
+  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+  let videoSizes = utils.deepAccess(bid, 'mediaTypes.video.sizes');
+  let bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
+
+  if (utils.isArray(bannerSizes) || utils.isArray(playerSize) || utils.isArray(videoSizes)) {
+    let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
+    return mediaTypesSizes
+      .reduce(function(acc, currSize) {
+        if (utils.isArray(currSize)) {
+          if (utils.isArray(currSize[0])) {
+            currSize.forEach(function (childSize) { acc.push(childSize) })
+          } else {
+            acc.push(currSize);
+          }
+        }
+        return acc;
+      }, [])
+  } else {
+    return bid.sizes;
+  }
 }
 
 function _validateId(id) {

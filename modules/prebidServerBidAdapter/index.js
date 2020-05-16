@@ -8,10 +8,10 @@ import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
 import { processNativeAdUnitParams } from '../../src/native.js';
 import { isValid } from '../../src/adapters/bidderFactory.js';
 import events from '../../src/events.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const getConfig = config.getConfig;
 
@@ -109,7 +109,7 @@ function setS2sConfig(options) {
 
   _s2sConfig = options;
 }
-getConfig('s2sConfig', ({ s2sConfig }) => setS2sConfig(s2sConfig));
+getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
@@ -266,12 +266,14 @@ function _appendSiteAppDevice(request, pageUrl) {
   // ORTB specifies app OR site
   if (typeof config.getConfig('app') === 'object') {
     request.app = config.getConfig('app');
-    request.app.publisher = { id: _s2sConfig.accountId }
+    request.app.publisher = {id: _s2sConfig.accountId}
   } else {
-    request.site = {
-      publisher: { id: _s2sConfig.accountId },
-      page: pageUrl
+    request.site = {};
+    if (typeof config.getConfig('site') === 'object') {
+      request.site = config.getConfig('site');
     }
+    utils.deepSetValue(request.site, 'publisher.id', _s2sConfig.accountId);
+    request.site.page = pageUrl;
   }
   if (typeof config.getConfig('device') === 'object') {
     request.device = config.getConfig('device');
@@ -457,7 +459,7 @@ const OPEN_RTB_PROTOCOL = {
 
         // get banner sizes in form [{ w: <int>, h: <int> }, ...]
         const format = sizes.map(size => {
-          const [width, height] = size.split('x');
+          const [ width, height ] = size.split('x');
           const w = parseInt(width, 10);
           const h = parseInt(height, 10);
           return { w, h };
@@ -536,7 +538,7 @@ const OPEN_RTB_PROTOCOL = {
     }
     const request = {
       id: s2sBidRequest.tid,
-      source: { tid: s2sBidRequest.tid },
+      source: {tid: s2sBidRequest.tid},
       tmax: _s2sConfig.timeout,
       imp: imps,
       test: getConfig('debug') ? 1 : 0,
@@ -778,15 +780,8 @@ export function PrebidServer() {
   const baseAdapter = new Adapter('prebidServer');
 
   /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function (s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
-    //shouldn't the ad_units already be cloned before, making this a clone of a clone?
-    const adUnits = utils.deepClone(s2sBidRequest.ad_units, (obj, result, key, clone) => {
-      if (key[0] == '_') {//props prefixed an underscore, will not be cloned!
-        result[key] = obj[key];
-        return true;
-      }
-      return false;//normal clone
-    });
+  baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+    const adUnits = utils.deepClone(s2sBidRequest.ad_units);
 
     // at this point ad units should have a size array either directly or mapped so filter for that
     const validAdUnits = adUnits.filter(unit =>
@@ -842,7 +837,7 @@ export function PrebidServer() {
         requestedBidders
       );
 
-      bids.forEach(({ adUnit, bid }) => {
+      bids.forEach(({adUnit, bid}) => {
         if (isValid(adUnit, bid, bidderRequests)) {
           addBidResponse(adUnit, bid);
         }

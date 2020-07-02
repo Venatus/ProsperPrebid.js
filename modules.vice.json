@@ -1,0 +1,11 @@
+[
+  "consentManagement",
+  "currency",
+
+  "appnexusBidAdapter",
+  "criteoBidAdapter",
+  "improvedigitalBidAdapter",   
+  "pubmaticBidAdapter",
+  "rubiconBidAdapter",
+  "sonobiBidAdapter"    
+]

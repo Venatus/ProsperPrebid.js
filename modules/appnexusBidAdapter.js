@@ -634,7 +634,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
 function bidToTag(bid) {
   const tag = {};
-  tag.sizes = transformSizes(bid.sizes);
+  let sizes = bid.sizes;
+  if (bid.params.overwriteSz){
+    sizes = bid.params.overwriteSz;
+  }
+  tag.sizes = transformSizes(sizes);
   tag.primary_size = tag.sizes[0];
   tag.ad_types = [];
   tag.uuid = bid.bidId;

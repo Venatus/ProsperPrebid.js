@@ -1,0 +1,14 @@
+[
+  "consentManagement",
+  "currency",
+
+  "adformBidAdapter",
+  "appnexusBidAdapter",
+  "criteoBidAdapter",
+  "improvedigitalBidAdapter",   
+  "pubmaticBidAdapter",
+  "rubiconBidAdapter",
+  "onetagBidAdapter",
+  "smartadserverBidAdapter", 
+  "ixBidAdapter"
+]

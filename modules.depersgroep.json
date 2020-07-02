@@ -1,0 +1,15 @@
+[
+    "consentManagement",
+    "currency",
+
+
+    "adheseBidAdapter",
+    "appnexusBidAdapter",
+    "criteoBidAdapter",
+    "improvedigitalBidAdapter",   
+    "ixBidAdapter",   
+    "rubiconBidAdapter",
+
+    "userId",
+    "id5IdSystem"
+  ]

@@ -1,0 +1,25 @@
+[
+    "consentManagement",
+    "currency",
+
+    "adformBidAdapter",
+    "adheseBidAdapter",
+    "appnexusBidAdapter",
+    "aolBidAdapter",
+    "criteoBidAdapter",
+    "districtmDMXBidAdapter",
+    "freewheel-sspBidAdapter",
+    "improvedigitalBidAdapter",   
+    "onetagBidAdapter",
+    "openxBidAdapter",
+    "pubmaticBidAdapter",
+    "pulsepointBidAdapter",
+    "rubiconBidAdapter",
+    "smartadserverBidAdapter",    
+    "sonobiBidAdapter",    
+    "teadsBidAdapter",
+
+
+    "googleAnalyticsAdapter",
+    "roxotAnalyticsAdapter"
+  ]

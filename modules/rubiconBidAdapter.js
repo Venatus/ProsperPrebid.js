@@ -492,6 +492,7 @@ export const spec = {
     bidRequest.startTime = new Date().getTime();
 
     const params = bidRequest.params;
+
     if (!params.position && bidRequest.spec && bidRequest.spec.visibility) {
       if (bidRequest.spec.isVisible) {
         params.position = 'atf';

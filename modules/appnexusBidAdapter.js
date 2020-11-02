@@ -653,7 +653,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 function bidToTag(bid) {
   const tag = {};
   let sizes = bid.sizes;
-  if (bid.params.overwriteSz){
+  if (bid.params.overwriteSz) {
     sizes = bid.params.overwriteSz;
   }
   tag.sizes = transformSizes(sizes);

@@ -291,7 +291,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     timer: null
   };
 
-  // in case we already have consent (eg during bid refresh)  
+  // in case we already have consent (eg during bid refresh)
   if (consentData) {
     utils.logInfo('User consent information already known.  Pulling internally stored information...');
     return exitModule(null, hookConfig);

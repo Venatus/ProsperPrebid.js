@@ -99,6 +99,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 
   function v2CmpResponseCallback(tcfData, success) {
+    //debugger;
     utils.logInfo('Received a response from CMP', tcfData);
     if (success) {
       if (tcfData.gdprApplies === false) {

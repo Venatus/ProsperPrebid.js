@@ -30,7 +30,12 @@ function clone(obj, cb) {
     // include prototype properties
     var value = obj[key];
     if (value && typeof value == 'object') {
-      result[key] = clone(value, cb);
+      try {
+        result[key] = clone(value, cb);
+      } catch (e) {
+        debugger;
+        throw e;
+      }
     } else {
       result[key] = value;
     }

@@ -84,7 +84,13 @@ function validateSizes(sizes, targLength) {
 }
 
 function validateBannerMediaType(adUnit) {
-  const validatedAdUnit = utils.deepClone(adUnit);
+  const validatedAdUnit = utils.deepClone(adUnit, (obj, result, key, clone) => {
+    if (key[0] == '_') {// props prefixed an underscore, will not be cloned!
+      result[key] = obj[key];
+      return true;
+    }
+    return false;// normal clone
+  });
   const banner = validatedAdUnit.mediaTypes.banner;
   const bannerSizes = validateSizes(banner.sizes);
   if (bannerSizes.length > 0) {
@@ -99,7 +105,13 @@ function validateBannerMediaType(adUnit) {
 }
 
 function validateVideoMediaType(adUnit) {
-  const validatedAdUnit = utils.deepClone(adUnit);
+  const validatedAdUnit = utils.deepClone(adUnit, (obj, result, key, clone) => {
+    if (key[0] == '_') {// props prefixed an underscore, will not be cloned!
+      result[key] = obj[key];
+      return true;
+    }
+    return false;// normal clone
+  });
   const video = validatedAdUnit.mediaTypes.video;
   if (video.playerSize) {
     let tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
@@ -121,7 +133,13 @@ function validateVideoMediaType(adUnit) {
 }
 
 function validateNativeMediaType(adUnit) {
-  const validatedAdUnit = utils.deepClone(adUnit);
+  const validatedAdUnit = utils.deepClone(adUnit, (obj, result, key, clone) => {
+    if (key[0] == '_') {// props prefixed an underscore, will not be cloned!
+      result[key] = obj[key];
+      return true;
+    }
+    return false;// normal clone
+  });
   const native = validatedAdUnit.mediaTypes.native;
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');

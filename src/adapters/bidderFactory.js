@@ -355,6 +355,9 @@ export function newBidder(spec) {
               }, request.options)
             );
             break;
+          case 'DIRECT':
+            configEnabledCallback(onSuccess)(request.response.responseText, request.response);
+          break;          
           default:
             logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
             handleResponse([], request);

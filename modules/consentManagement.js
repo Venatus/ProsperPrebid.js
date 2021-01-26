@@ -16,6 +16,7 @@ const events = require('../src/events.js');
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
+const DEFAULT_ALLOW_AUCTION_WO_CONSENT_IAB_CMP_VER = 2;
 
 export const allowAuction = {
   value: DEFAULT_ALLOW_AUCTION_WO_CONSENT,
@@ -399,7 +400,8 @@ function cmpFailed(errMsg, hookConfig, extraArgs) {
   clearTimeout(hookConfig.timer);
 
   // still set the consentData to undefined when there is a problem as per config options
-  if (allowAuction.value && cmpVersion === 1) {
+  //debugger;
+  if (allowAuction.value && cmpVersion <= DEFAULT_ALLOW_AUCTION_WO_CONSENT_IAB_CMP_VER) {
     storeConsentData(undefined);
   }
   exitModule(errMsg, hookConfig, extraArgs);
@@ -457,10 +459,11 @@ function exitModule(errMsg, hookConfig, extraArgs) {
 
     if (errMsg) {
  		events.emit(CONSTANTS.EVENTS.CMP_FAILED, { errMsg: errMsg })
-      if (allowAuction.value && cmpVersion === 1) {
+      if (allowAuction.value && cmpVersion <= DEFAULT_ALLOW_AUCTION_WO_CONSENT_IAB_CMP_VER) {
         utils.logWarn(errMsg + ` 'allowAuctionWithoutConsent' activated.`, extraArgs);
         nextFn.apply(context, args);
       } else {
+        //debugger;
         utils.logError(errMsg + ' Canceling auction as per consentManagement config.', extraArgs);
         if (typeof hookConfig.bidsBackHandler === 'function') {
           hookConfig.bidsBackHandler();

@@ -103,7 +103,6 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 
   function v2CmpResponseCallback(tcfData, success) {
-    //debugger;
     utils.logInfo('Received a response from CMP', tcfData);
     if (success) {
       if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
@@ -232,29 +231,51 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
     let apiName = (cmpVersion === 2) ? '__tcfapi' : '__cmp';
 
+    let callId = Math.random() + '';
+    let callName = `${apiName}Call`;
+
     /* Setup up a __cmp function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
-    window[apiName] = function (cmd, arg, callback) {
-      let callId = Math.random() + '';
-      let callName = `${apiName}Call`;
-      let msg = {
-        [callName]: {
-          command: cmd,
-          parameter: arg,
-          callId: callId
-        }
-      };
-      if (cmpVersion !== 1) msg[callName].version = cmpVersion;
+    if (cmpVersion === 2) {
+      window[apiName] = function (cmd, cmpVersion, callback, arg) {
+        let msg = {
+          [callName]: {
+            command: cmd,
+            version: cmpVersion,
+            parameter: arg,
+            callId: callId
+          }
+        };
 
-      cmpCallbacks[callId] = callback;
-      cmpFrame.postMessage(msg, '*');
+        cmpCallbacks[callId] = callback;
+        cmpFrame.postMessage(msg, '*');
+      }
+
+      /** when we get the return message, call the stashed callback */
+      window.addEventListener('message', readPostMessageResponse, false);
+
+      // call CMP
+      window[apiName](commandName, cmpVersion, moduleCallback);
+    } else {
+      window[apiName] = function (cmd, arg, callback) {
+        let msg = {
+          [callName]: {
+            command: cmd,
+            parameter: arg,
+            callId: callId
+          }
+        };
+
+        cmpCallbacks[callId] = callback;
+        cmpFrame.postMessage(msg, '*');
+      }
+
+      /** when we get the return message, call the stashed callback */
+      window.addEventListener('message', readPostMessageResponse, false);
+
+      // call CMP
+      window[apiName](commandName, undefined, moduleCallback);
     }
-
-    /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
-
-    // call CMP
-    window[apiName](commandName, undefined, moduleCallback);
 
     function readPostMessageResponse(event) {
       let cmpDataPkgName = `${apiName}Return`;
@@ -400,7 +421,6 @@ function cmpFailed(errMsg, hookConfig, extraArgs) {
   clearTimeout(hookConfig.timer);
 
   // still set the consentData to undefined when there is a problem as per config options
-  //debugger;
   if (allowAuction.value && cmpVersion <= DEFAULT_ALLOW_AUCTION_WO_CONSENT_IAB_CMP_VER) {
     storeConsentData(undefined);
   }
@@ -458,12 +478,11 @@ function exitModule(errMsg, hookConfig, extraArgs) {
     let nextFn = hookConfig.nextFn;
 
     if (errMsg) {
- 		events.emit(CONSTANTS.EVENTS.CMP_FAILED, { errMsg: errMsg })
+      events.emit(CONSTANTS.EVENTS.CMP_FAILED, { errMsg: errMsg })
       if (allowAuction.value && cmpVersion <= DEFAULT_ALLOW_AUCTION_WO_CONSENT_IAB_CMP_VER) {
         utils.logWarn(errMsg + ` 'allowAuctionWithoutConsent' activated.`, extraArgs);
         nextFn.apply(context, args);
       } else {
-        //debugger;
         utils.logError(errMsg + ' Canceling auction as per consentManagement config.', extraArgs);
         if (typeof hookConfig.bidsBackHandler === 'function') {
           hookConfig.bidsBackHandler();
@@ -527,6 +546,7 @@ export function setConsentConfig(config) {
   gdprScope = config.defaultGdprScope === true;
 
   utils.logInfo('consentManagement module has been activated...');
+
   if (userCMP === 'static') {
     if (utils.isPlainObject(config.consentData)) {
       staticConsentData = config.consentData;

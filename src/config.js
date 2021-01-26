@@ -200,14 +200,14 @@ export function newConfig() {
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
       },
+
       _threadEmptyBidsAsBids: DEFAULT_THREAD_EMPTYBIDS_AS_BIDS,
       get threadEmptyBidsAsBids() {
         return this._threadEmptyBidsAsBids;
       },
       set threadEmptyBidsAsBids(val) {
         this._threadEmptyBidsAsBids = val;
-      },
-
+      },	
 
       _auctionOptions: {},
       get auctionOptions() {

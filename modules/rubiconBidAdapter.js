@@ -311,11 +311,10 @@ export const spec = {
         bidRequest
       }
     });
-
-    var singleRequest = config.getConfig('rubicon.singleRequest');
+    
     //debugger;
 
-    if (typeof (singleRequest) != 'undefined' && singleRequest !== true) {
+    if (typeof (rubiConf.singleRequest) != 'undefined' && rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
@@ -528,7 +527,7 @@ export const spec = {
           } else if (eid.source === 'sharedid.org') {
             data['eid_sharedid.org'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.third) || ''}`;
           } else if (eid.source === 'id5-sync.com') {
-            data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.ext && eid.ext.linkType) || ''}`;
+            data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
           } else {
             // add anything else with this generic format
             data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;

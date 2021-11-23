@@ -85,8 +85,7 @@ function validateSizes(sizes, targLength) {
   return cleanSizes;
 }
 
-function validateBannerMediaType(adUnit) {
-  debugger;
+function validateBannerMediaType(adUnit) {  
   const validatedAdUnit = utils.deepClone(adUnit, (obj, result, key, clone) => {
     if (key[0] == '_') {// props prefixed an underscore, will not be cloned!
       result[key] = obj[key];

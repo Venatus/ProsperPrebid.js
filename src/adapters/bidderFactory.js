@@ -175,7 +175,7 @@ export function registerBidder(spec) {
  */
 export function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
-    getSpec: function () {
+    getSpec: function() {
       return Object.freeze(spec);
     },
     registerSyncs,
@@ -228,7 +228,7 @@ export function newBidder(spec) {
         } else if (request.bids && isArray(request.bids)) {
           for (let i = 0; i < request.bids.length; i++) {
             setRequestPropsFilter(request.bids[i], props);
-          }          
+          }
         } else if (bidderRequest) {
           /* debugger;
           setRequestPropsFilter(bidderRequest, props);
@@ -251,9 +251,9 @@ export function newBidder(spec) {
         //TODO: delegate onResponse handling to after this call via this call
         //debugger;
         logMessage(bidderRequest);
-        /*if(bidderRequest.bids[0].adUnitCode.indexOf('p5_0_2') !=-1 && !request.bidRequest && !request.bidderRequest){
+        /* if(bidderRequest.bids[0].adUnitCode.indexOf('p5_0_2') !=-1 && !request.bidRequest && !request.bidderRequest){
           debugger;
-        }*/
+        } */
         logMessage("handleResponse Done ", request, bids);
         if (!bids || bids.length == 0) {
           markRequestDoneWithNoBids(request);
@@ -310,6 +310,7 @@ export function newBidder(spec) {
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
+      requests.forEach(_ => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest));
       requests.forEach(processRequest);
 
       function formatGetParameters(data) {
@@ -326,9 +327,9 @@ export function newBidder(spec) {
             request.bidRequest = bidRequestMap[request.bidId];
           }
         }
-        /*if(!request.bidRequest && !request.bidderRequest && bidderRequest.bidderCode == 'ix'){
+        /* if(!request.bidRequest && !request.bidderRequest && bidderRequest.bidderCode == 'ix'){
           debugger;
-        }*/
+        } */
         switch (request.method) {
           case 'GET':
             ajax(
@@ -361,7 +362,7 @@ export function newBidder(spec) {
             break;
           case 'DIRECT':
             configEnabledCallback(onSuccess)(request.response.responseText, request.response);
-          break;          
+            break;
           default:
             logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
             handleResponse([], request);
@@ -369,8 +370,8 @@ export function newBidder(spec) {
         }
 
         // If the server responds successfully, use the adapter code to unpack the Bids from it.
-        // If the adapter code fails, no bids should be added. After all the bids have been added, make
-        // sure to call the `onResponse` function so that we're one step closer to calling done().
+        // If the adapter code fails, no bids should be added. After all the bids have been added,
+        // make sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response, responseObj) {
           onTimelyResponse(spec.code);
 
@@ -410,7 +411,7 @@ export function newBidder(spec) {
             if (bids.forEach) {
               bids.forEach(addBidUsingRequestMap);
             } else {
-              addBidUsingRequestMap(bids, 0, [bids]);//fake triggering last element
+              addBidUsingRequestMap(bids, 0, [bids]); // fake triggering last element
             }
           }
           handleResponse(bids, request);
@@ -419,7 +420,7 @@ export function newBidder(spec) {
           function markNoBidsUsingRequestMap(bidResponseIds) {
             for (var id in bidRequestMap) {
               if (!includes(bidResponseIds, id)) {
-                markRequestDoneWithNoBids({ bidRequest: bidRequestMap[id] });//could flag "twice" when the adepter only has 1 bid request via handleResponseCall later on
+                markRequestDoneWithNoBids({ bidRequest: bidRequestMap[id] });// could flag "twice" when the adepter only has 1 bid request via handleResponseCall later on
               }
             }
           }
@@ -437,7 +438,7 @@ export function newBidder(spec) {
             }
           }
 
-          function headerParser(xmlHttpResponse) {//xmlHttpResponse not used?
+          function headerParser(xmlHttpResponse) {
             return {
               get: responseObj.getResponseHeader.bind(responseObj)
             };
@@ -446,10 +447,10 @@ export function newBidder(spec) {
 
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
         // call onResponse() so that we're one step closer to calling done().
-        function onFailure(err) {
+        function onFailure(errorMessage, error) {
           onTimelyResponse(spec.code);
-
-          logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
+          adapterManager.callBidderError(spec.code, error, bidderRequest)
+          events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, { error, bidderRequest });
           handleResponse([], request);
           onResponse();
         }
@@ -577,7 +578,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
   // if a banner impression has one valid size, we assign that size to any bid
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
-    const [width, height] = parsedSizes[0].split('x');
+    const [ width, height ] = parsedSizes[0].split('x');
     bid.width = parseInt(width, 10);
     bid.height = parseInt(height, 10);
     return true;

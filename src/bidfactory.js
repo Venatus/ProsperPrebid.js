@@ -1,4 +1,4 @@
-import { getUniqueIdentifierStr } from './utils.js';
+import { getUniqueIdentifierStr, timestamp } from './utils.js';
 
 /**
  Required paramaters
@@ -55,6 +55,24 @@ function Bid(statusCode, bidRequest) {
   this.getSize = function () {
     return this.width + 'x' + this.height;
   };
+
+  this.expired = function() {
+    // debugger;
+    if (_statusCode > 1) return true;
+    if (this.responseTimestamp && this.responseTimestamp > 0) {
+      let ttl = 1800;
+      if (this.ttl) {
+        ttl = this.ttl;
+      }
+      ttl *= 1000;// to ms
+      const timebuffer = 1000;
+      const ts = timestamp();
+      if (this.responseTimestamp + ttl < ts + timebuffer) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 // Bid factory function.

@@ -463,7 +463,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
     //console.log(bidsReqForAdUnit, bidsRspForAdUnit);
     /*if (bidsForAdUnit.every((bid)=>{bid.doneCbCallCount>=1})){
-      const bidsResps = auctionInstance.getBidResponsesByAdUnit([bidResponse.adUnitCode])    
+      const bidsResps = auctionInstance.getBidResponsesByAdUnit([bidResponse.adUnitCode])
       .reduce(groupByPlacement, {});
       bidsRespObj[bidResponse.adUnitCode] = {bids: bidsResps};
       events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, [bidsRespObj], [bidResponse.adUnitCode]);

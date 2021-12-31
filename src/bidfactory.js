@@ -61,3 +61,20 @@ function Bid(statusCode, bidRequest) {
 export function createBid(statusCode, bidRequest) {
   return new Bid(statusCode, bidRequest);
 }
+
+export function restoreValidBid(origBid) {
+  const bid = createBid(1, origBid);
+  const {adId, width, height, ad, requestTimestamp, ttl, cpm, originalCPM, originalCurrent, ...rest} = origBid;
+  if (rest) {
+
+  }
+  bid.adId = adId;
+  bid.ad = ad;
+  bid.cpm = cpm;
+  bid.originalCPM = originalCPM;
+  bid.width = width;
+  bid.height = height;
+  bid.requestTimestamp = requestTimestamp;
+  bid.ttl = ttl;
+  return bid;
+}

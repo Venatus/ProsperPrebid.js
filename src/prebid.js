@@ -352,6 +352,9 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
   return { bids };
 };
 
+$$PREBID_GLOBAL$$.addBids = function (bids) {
+  auctionManager.addBids(bids);
+}
 /**
  * Set query string targeting on one or more GPT ad units.
  * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.

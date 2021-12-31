@@ -21,6 +21,7 @@
 
 import { uniques, flatten, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
+import { restoreValidBid } from './bidfactory.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const CONSTANTS = require('./constants.json');
@@ -34,6 +35,7 @@ const CONSTANTS = require('./constants.json');
 export function newAuctionManager() {
   const _auctions = [];
   const auctionManager = {};
+  let store = null;
 
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
@@ -117,6 +119,20 @@ export function newAuctionManager() {
 
   auctionManager.clearAllAuctions = function() {
     _auctions.length = 0;
+  }
+
+  auctionManager.addBids = function(bids) {
+    if (!store) {
+      store = this.createAuction({
+        adUnits: [],
+        adUnitCodes: []
+      });
+    }
+    const bidsCopy = bids.map(bid => {
+      return restoreValidBid(bid);
+    });
+    store.addBidReceived(bidsCopy); // TODO: remove duplicate bid.adId!
+    return store;
   }
 
   function _addAuction(auction) {

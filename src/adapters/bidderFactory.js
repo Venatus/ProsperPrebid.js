@@ -212,17 +212,17 @@ export function newBidder(spec) {
         }
       }
       function setRequestProps(request, props) {
-        // two possible options here? 
+        // two possible options here?
         if (request.bidRequest) {
           setRequestPropsFilter(request.bidRequest, props);
         } else if (request.bidderRequest) {
           setRequestPropsFilter(request.bidderRequest, props);
         } else if (request.bidRequests) {
-          if(isArray(request.bidRequests)) {
-            for(let i=0; i<request.bidRequests.length;i++) {
+          if (isArray(request.bidRequests)) {
+            for (let i = 0; i < request.bidRequests.length; i++) {
               setRequestPropsFilter(request.bidRequests[i], props);
             }
-          }else{
+          } else {
             setRequestPropsFilter(request.bidRequests, props);
           }
         } else if (request.bids && isArray(request.bids)) {
@@ -248,8 +248,8 @@ export function newBidder(spec) {
       }
 
       function handleResponse(bids, request) {
-        //TODO: delegate onResponse handling to after this call via this call
-        //debugger;
+        // TODO: delegate onResponse handling to after this call via this call
+        // debugger;
         logMessage(bidderRequest);
         /* if(bidderRequest.bids[0].adUnitCode.indexOf('p5_0_2') !=-1 && !request.bidRequest && !request.bidderRequest){
           debugger;

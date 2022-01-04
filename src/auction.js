@@ -318,7 +318,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
     (function processRequestMap(map) {
       let updateMap = {};
+      let empty = true;
       for (let adUnit in map) {
+        empty = false;
         let requests = 0;
         let respones = [];
         for (let requestId in map[adUnit].bids) {
@@ -353,6 +355,19 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
           _adUnitsDone[adUnit] = respones.length;
         } else {
           logMessage("adunit not ready: " + adUnit + " " + requests + "/" + respones.length + " " + (timestamp() - _auctionStart) + 'ms');
+        }
+      }
+      if (empty) {
+        // in case no requests are made!
+        // debugger;
+        for (let i = 0; i < _adUnitCodes.length; i++) {
+          if (!_adUnitsDone[_adUnitCodes[i]]) {
+            // emit the event any way, with empty bids!
+            _adUnitsDone[_adUnitCodes[i]] = 0;
+            let dummyBids = {};
+            dummyBids[_adUnitCodes[i]] = {bids: []};
+            events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, dummyBids, [_adUnitCodes[i]]);
+          }
         }
       }
     })(requestMap);

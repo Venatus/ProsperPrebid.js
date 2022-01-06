@@ -360,6 +360,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       if (empty) {
         // in case no requests are made!
         // debugger;
+        logMessage('adunits have no bids: ', _adUnitCodes);
         for (let i = 0; i < _adUnitCodes.length; i++) {
           if (!_adUnitsDone[_adUnitCodes[i]]) {
             // emit the event any way, with empty bids!

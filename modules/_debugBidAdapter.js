@@ -69,7 +69,7 @@ export const spec = {
       let respond = true;
       let bidSize;
 
-      if ((bid.params.responseRate && bid.params.responseRate >= Math.random()) || bid.params.noBid) {
+      if ((bid.params.responseRate && (1 - bid.params.responseRate) >= Math.random()) || bid.params.noBid) {
         respond = false;
       }
       if (bid.params.bidSizes) {

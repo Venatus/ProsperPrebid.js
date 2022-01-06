@@ -1,12 +1,21 @@
-import * as utils from 'src/utils';
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {isNumber} from '../src/utils.js';
 const BIDDER_CODE = '_debugger';
 
 let creativeId = 0;
 
-function getBidResponse(bid) {
-  const size = bid.sizes[Math.round(Math.random() * (bid.sizes.length - 1))];
+function rndN(n,p) {
+  if(arguments.length == 1 || !p)
+    p = 2;
+  return (Math.round(n * Math.pow(10, p)) / Math.pow(10, p));
+}
+
+function getBidResponse(bid, size) {
+  if (!size) {
+    size = bid.sizes[Math.round(Math.random() * (bid.sizes.length - 1))];
+  }
   if (!size) {
     debugger;
   }
@@ -26,8 +35,11 @@ function getBidResponse(bid) {
     netRevenue: true,
     ttl: 300,
     referrer: 'http://localhost',
-    ad: '<div style="width:' + size[0] + 'px;height:' + size[1] + 'px;background-color:rgba(237, 237, 237, 0.8);">DEBUG AD (' + size[0] + 'x' + size[1] + ')</div>'
+    ad: '<div style="width:' + size[0] + 'px;height:' + size[1] + 'px;background-color:rgba(237, 237, 237, 0.8);">DEBUG AD (' + size[0] + 'x' + size[1] + ', cpm: ' + rndN(cpm, 2) + ')</div>'
   };
+  if (isNumber(bid.params.bidTTL)) {
+    bidResponse.ttl = bid.params.bidTTL;
+  }
   return bidResponse;
 }
 
@@ -55,12 +67,30 @@ export const spec = {
     const response = [];
     validBidRequests.forEach(bid => {
       let respond = true;
+      let bidSize;
 
-      if (bid.params.responseRate && bid.params.responseRate >= Math.random()) {
+      if ((bid.params.responseRate && bid.params.responseRate >= Math.random()) || bid.params.noBid) {
         respond = false;
       }
+      if (bid.params.bidSizes) {
+        if (bid.params.bidSizes.length == 0) {
+          respond = false;
+        } else if (bid.params.bidSizes.length == 1) {
+          // debugger;
+          bidSize = bid.params.bidSizes[0];
+        } else {
+          // debugger;
+          const intersectSizes = bid.sizes.filter(bidSize => bid.params.bidSizes.filter(pBidSize => pBidSize[0] == bidSize[0] && pBidSize[1] == bidSize[1]).length > 0);
+          if (intersectSizes.length > 0) {
+            bidSize = intersectSizes[Math.round(Math.random() * (intersectSizes.length - 1))];
+          } else {
+            // debugger;
+            respond = false;
+          }
+        }
+      }
       if (respond) {
-        response.push(getBidResponse(bid));
+        response.push(getBidResponse(bid, bidSize));
       }
     });
 

@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {isNumber} from '../src/utils.js';
+import {isNumber, isFn} from '../src/utils.js';
 const BIDDER_CODE = '_debugger';
 
 let creativeId = 0;
@@ -39,6 +39,9 @@ function getBidResponse(bid, size) {
   };
   if (isNumber(bid.params.bidTTL)) {
     bidResponse.ttl = bid.params.bidTTL;
+  }
+  if (isFn(bid.params.cpmFunc)) {
+    bid.params.cpmFunc(bid, bidResponse);
   }
   return bidResponse;
 }

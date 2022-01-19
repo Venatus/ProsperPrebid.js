@@ -883,7 +883,7 @@ function setupBidTargeting(bidObject, bidderRequest) {
   let keyValues;
   const cpmCheck = (isAllowZeroCpmBidsEnabled(bidObject.bidderCode)) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
   if (bidObject.bidderCode && (cpmCheck || bidObject.dealId)) {
-    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode);
+    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode && bid.bidId === bidObject.requestId);
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
@@ -1058,7 +1058,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
     var value = kvPair.val;
 
     if (keyValues[key]) {
-      logWarn('The key: ' + key + ' is getting ovewritten');
+      logWarn('The key: ' + key + ' is being overwritten');
     }
 
     if (isFn(value)) {

@@ -451,6 +451,7 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
           adapterManager.callBidderError(spec.code, error, bidderRequest)
           events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, { error, bidderRequest });
+          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
           handleResponse([], request);
           onResponse();
         }

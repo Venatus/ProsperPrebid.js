@@ -1,14 +1,17 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {isNumber, isFn} from '../src/utils.js';
+import {isNumber, isArray, isFn} from '../src/utils.js';
+import { createBid } from '../src/bidfactory.js';
+const CONSTANTS = require('../src/constants.json');
 const BIDDER_CODE = '_debugger';
 
 let creativeId = 0;
 
 function rndN(n,p) {
-  if(arguments.length == 1 || !p)
+  if (arguments.length == 1 || !p) {
     p = 2;
+  }
   return (Math.round(n * Math.pow(10, p)) / Math.pow(10, p));
 }
 
@@ -19,10 +22,31 @@ function getBidResponse(bid, size) {
   if (!size) {
     debugger;
   }
+  let sizeStr;
+  if (isArray(size)) {
+    sizeStr = size.join('x');
+  } else {
+    sizeStr = size;
+  }
   // debugger;
   let cpm = 20;
-  if (bid.params && bid.params.priceBase >= 0 && bid.params.priceRange > 0) {
-    cpm = bid.params.priceBase + (Math.random() * bid.params.priceRange);
+  let priceParams = bid.params;
+  if (bid.params && bid.params.bidPriceSize && bid.params.bidPriceSize[sizeStr]) {
+    priceParams = bid.params.bidPriceSize[sizeStr];
+  }
+
+  if (priceParams != bid.params && ((priceParams.responseRate && (1 - priceParams.responseRate) >= Math.random()) || priceParams.noBid)) {
+    return createBid(CONSTANTS.STATUS.NO_BID, {
+      bidderCode: BIDDER_CODE
+    });
+  }
+
+  if (priceParams) {
+    if (priceParams.price >= 0) {
+      cpm = priceParams.price;
+    } else if (priceParams.priceBase >= 0 && priceParams.priceRange > 0) {
+      cpm = priceParams.priceBase + (Math.random() * priceParams.priceRange);
+    }
   }
   const bidResponse = {
     requestId: bid.bidId,

@@ -8,7 +8,7 @@ const BIDDER_CODE = '_debugger';
 
 let creativeId = 0;
 
-function rndN(n,p) {
+function rndN(n, p) {
   if (arguments.length == 1 || !p) {
     p = 2;
   }

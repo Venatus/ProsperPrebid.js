@@ -26,6 +26,10 @@ function clone(obj, cb) {
 function clone(obj, cb) {
   var result = Array.isArray(obj) ? [] : {};
   for (var key in obj) {
+    if (key && key.length > 0 && key[0] == '_') { // always ignore everything prefixed with _ for now! (allow pass-throw of the _placement reference amongst immutable objects)
+      // debugger;
+      continue;
+    }
     if (cb && cb.call && cb(obj, result, key, clone)) continue; // allow callback for special property handling
     // include prototype properties
     var value = obj[key];
@@ -33,6 +37,7 @@ function clone(obj, cb) {
       try {
         result[key] = clone(value, cb);
       } catch (e) {
+        console.error(e);
         debugger;
         throw e;
       }

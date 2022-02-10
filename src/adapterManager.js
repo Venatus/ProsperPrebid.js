@@ -159,6 +159,21 @@ function getAdUnitCopyForClientAdapters(adUnits) {
     }
     return false;// normal clone
   });
+
+  // for now just alias the _placement
+  // debugger;
+  try {
+    var adunitCln = adUnits.slice(0);
+    for (var i = 0; i < adUnitsClientCopy.length; i++) {
+      for (var j = 0; j < adunitCln.length; j++) {
+        if (adUnitsClientCopy[i].code == adunitCln[j].code) {
+          adUnitsClientCopy._placement = adunitCln[j]._placement;
+        }
+      }
+    }
+  } catch (e) {
+    debugger;
+  }
   // filter out s2s bids
   adUnitsClientCopy.forEach((adUnit) => {
     adUnit.bids = adUnit.bids.filter((bid) => {
@@ -321,13 +336,20 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsClientCopy, (obj, result, key, clone) => {
-	      if (key[0] == '_') {//props prefixed an underscore, will not be cloned!
-	        result[key] = obj[key];
-	        return true;
-	      }
-	      return false;//normal clone
-	    }), labels, src: 'client'}),
+      bids: hookedGetBids({
+        bidderCode,
+        auctionId,
+        bidderRequestId,
+        'adUnits': deepClone(adUnitsClientCopy, (obj, result, key, clone) => {
+          if (key[0] == '_') { // props prefixed an underscore, will not be cloned!
+            // debugger;
+            result[key] = obj[key];
+            return true;
+          }
+          return false; // normal clone
+        }),
+        labels,
+        src: 'client'}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo
@@ -445,6 +467,18 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     bidRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidRequest.bidderCode];
+
+    if (!bidRequest._placement) {
+      for (var xy = 0; xy < adUnits.length; xy++) { // TODO: make idem-potent
+        for (var ab = 0; ab < bidRequest.bids.length; ab++) {
+          if (adUnits[xy].code === bidRequest.bids[ab].adUnitCode) {
+            bidRequest.bids[ab]._placement = adUnits[xy]._placement;
+            // debugger;
+          }
+        }
+      }
+    }
+
     config.runWithBidder(bidRequest.bidderCode, () => {
       logMessage(`CALLING BIDDER`);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);

@@ -273,15 +273,24 @@ function setGeneralInfo(bidRequest) {
   if (params.dealId) {
     this['dealId'] = params.dealId;
   }
-  const coords = getSpaceCoords(bidRequest.adUnitCode);
+  const coords = getSpaceCoords(bidRequest);
   if (coords) {
     this['coords'] = coords;
   }
 }
 
-function getSpaceCoords(id) {
-  const space = document.getElementById(id);
+function getSpaceCoords(req) {
+  let space;
+  if (req._placement && req._placement.element) { // call getElement()?
+    space = req._placement.element;
+  }else{
+    space = document.getElementById(req.adUnitCode);
+  }
+  if (!space) {
+    return null;
+  }
   try {
+     debugger;
     const { top, left, width, height } = space.getBoundingClientRect();
     let window = space.ownerDocument.defaultView;
     const coords = { top: top + window.pageYOffset, left: left + window.pageXOffset, width, height };

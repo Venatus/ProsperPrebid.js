@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {isNumber, isArray, isFn} from '../src/utils.js';
+import {isNumber, isArray, isFn, isStr} from '../src/utils.js';
 import { createBid } from '../src/bidfactory.js';
 const CONSTANTS = require('../src/constants.json');
 const BIDDER_CODE = '_debugger';
@@ -14,6 +14,12 @@ function rndN(n, p) {
   }
   return (Math.round(n * Math.pow(10, p)) / Math.pow(10, p));
 }
+
+const defaultFormats = {
+  skin: function(code, bid, bidResponse, defaultFormats) {
+    return '<script>if(self.frameElement){self.frameElement.style.display="none";var div = self.frameElement.ownerDocument.body.appendChild(self.frameElement.ownerDocument.createElement("div"));div.style.position="fixed";div.style.left=0;div.style.top=0;div.style.height=div.style.width="250px";div.style.zIndex=0xFFFFFFFF;div.style.backgroundColor="darkGray";div.innerHTML="skin ' + rndN(bidResponse.cpm, 2) + '";self.addEventListener("unload",function(){div.parentNode.removeChild(div);});}<\/script>';
+  }
+};
 
 function getBidResponse(bid, size) {
   if (!size) {
@@ -48,6 +54,7 @@ function getBidResponse(bid, size) {
       cpm = priceParams.priceBase + (Math.random() * priceParams.priceRange);
     }
   }
+  // debugger;
   const bidResponse = {
     requestId: bid.bidId,
     cpm: cpm,
@@ -66,6 +73,19 @@ function getBidResponse(bid, size) {
   }
   if (isFn(bid.params.cpmFunc)) {
     bid.params.cpmFunc(bid, bidResponse);
+  }
+  if (priceParams.ad) {
+    if (isStr(priceParams.ad)) {
+      bidResponse.ad += priceParams.ad;
+    } else if (isFn(priceParams.ad)) {
+      bidResponse.ad = priceParams.ad(bidResponse.ad, bid, bidResponse, defaultFormats);
+    }
+  } else if(bid.params.ad) {
+    if (isStr(bid.params.ad)) {
+      bidResponse.ad += bid.params.ad;
+    } else if (isFn(bid.params.ad)) {
+      bidResponse.ad = bid.params.ad(bidResponse.ad, bid, bidResponse, defaultFormats);
+    }
   }
   return bidResponse;
 }

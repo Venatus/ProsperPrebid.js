@@ -66,7 +66,7 @@ function getBidResponse(bid, size) {
     netRevenue: true,
     ttl: 300,
     referrer: 'http://localhost',
-    ad: '<div style="width:' + size[0] + 'px;height:' + size[1] + 'px;background-color:rgba(237, 237, 237, 0.8);">DEBUG AD (' + size[0] + 'x' + size[1] + ', cpm: ' + rndN(cpm, 2) + ')</div>'
+    ad: '<div id="bid_id_' + bid.bidId + '" title="' + bid.bidder + '" style="width:' + size[0] + 'px;height:' + size[1] + 'px;background-color:rgba(237, 237, 237, 0.8);">DEBUG AD (' + size[0] + 'x' + size[1] + ', cpm: ' + rndN(cpm, 2) + ')</div>'
   };
   if (isNumber(bid.params.bidTTL)) {
     bidResponse.ttl = bid.params.bidTTL;
@@ -86,6 +86,9 @@ function getBidResponse(bid, size) {
     } else if (isFn(bid.params.ad)) {
       bidResponse.ad = bid.params.ad(bidResponse.ad, bid, bidResponse, defaultFormats);
     }
+  }
+  if (bid.params.adBreakout || priceParams.adBreakout) {
+    bidResponse.ad += '<script>if(self.frameElement){self.frameElement.style.display="none";var div =self.document.getElementById("bid_id_' + bid.bidId + '"); if(div){self.frameElement.parentNode.insertBefore(div, self.frameElement);}}<\/script>';
   }
   return bidResponse;
 }

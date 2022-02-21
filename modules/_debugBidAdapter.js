@@ -55,6 +55,7 @@ function getBidResponse(bid, size) {
     }
   }
   // debugger;
+  const defaultStyle = 'border: 1px solid black;box-sizing: border-box;box-shadow: inset 0px 0px 3px 3px rgb(0,0,0,.16);padding: 4px;';
   const bidResponse = {
     requestId: bid.bidId,
     cpm: cpm,
@@ -66,7 +67,7 @@ function getBidResponse(bid, size) {
     netRevenue: true,
     ttl: 300,
     referrer: 'http://localhost',
-    ad: '<div id="bid_id_' + bid.bidId + '" title="' + bid.bidder + '" style="width:' + size[0] + 'px;height:' + size[1] + 'px;background-color:rgba(237, 237, 237, 0.8);">DEBUG AD (' + size[0] + 'x' + size[1] + ', cpm: ' + rndN(cpm, 2) + ')</div>'
+    ad: '<div id="bid_id_' + bid.bidId + '" title="' + bid.bidder + '" style="width:' + size[0] + 'px;height:' + size[1] + 'px;background-color:rgba(237, 237, 237, 0.8);' + defaultStyle + '">DEBUG AD (' + size[0] + 'x' + size[1] + ', cpm: ' + rndN(cpm, 2) + ')</div>'
   };
   if (isNumber(bid.params.bidTTL)) {
     bidResponse.ttl = bid.params.bidTTL;

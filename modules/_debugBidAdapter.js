@@ -129,6 +129,15 @@ export const spec = {
         } else if (bid.params.bidSizes.length == 1) {
           // debugger;
           bidSize = bid.params.bidSizes[0];
+          if (bid.params.matchBidSize) {
+            const intersectSizes = bid.sizes.filter(bidSizef => bidSizef[0] == bidSize[0] && bidSizef[1] == bidSize[1]);
+            if (intersectSizes.length > 0) {
+              // debugger;
+              // do nothing!
+            } else {
+              respond = false;
+            }
+          }
         } else {
           // debugger;
           const intersectSizes = bid.sizes.filter(bidSize => bid.params.bidSizes.filter(pBidSize => pBidSize[0] == bidSize[0] && pBidSize[1] == bidSize[1]).length > 0);

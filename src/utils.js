@@ -1384,3 +1384,15 @@ export function isAllowZeroCpmBidsEnabled(bidderCode) {
   return ((bidderSettings[bidderCode] && bidderSettings[bidderCode].allowZeroCpmBids === true) ||
    (bidderSettings.standard && bidderSettings.standard.allowZeroCpmBids === true));
 }
+
+/**
+ * returns a window object, which holds the provided document or null
+ * @param {Document} doc
+ * @returns {Window}
+ */
+export function getWindowFromDocument(doc) {
+  if (!doc) {
+    return null;
+  }
+  return doc.defaultView || doc.parentWindow;
+}

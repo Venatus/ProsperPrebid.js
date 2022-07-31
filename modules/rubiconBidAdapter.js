@@ -1,14 +1,28 @@
-import { mergeDeep, _each, logError, deepAccess, deepSetValue, isStr, isNumber, logWarn, convertTypes, isArray, parseSizesInput, logMessage, formatQS } from '../src/utils.js';
+import {
+  _each,
+  convertTypes,
+  deepAccess,
+  deepSetValue,
+  formatQS,
+  isArray,
+  isNumber,
+  isStr,
+  logError,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  parseSizesInput
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import { Renderer } from '../src/Renderer.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {find} from '../src/polyfill.js';
+import {Renderer} from '../src/Renderer.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
-const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.0.0.js';
+const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
 let rubiConf = {};
@@ -240,6 +254,12 @@ export const spec = {
       if (!isNaN(bidFloor)) {
         data.imp[0].bidfloor = bidFloor;
       }
+
+      // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
+      if (typeof bidRequest.floorData === 'object') {
+        data.ext.prebid.floors = { enabled: false };
+      }
+
       // if value is set, will overwrite with same value
       data.imp[0].ext[bidRequest.bidder].video.size_id = determineRubiconVideoSizeId(bidRequest)
 
@@ -313,9 +333,8 @@ export const spec = {
         bidRequest
       }
     });
-    
-    //debugger;
 
+    // debugger;
     if (typeof (rubiConf.singleRequest) != 'undefined' && rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
@@ -396,6 +415,7 @@ export const spec = {
       .concat([
         'tk_flint',
         'x_source.tid',
+        'l_pb_bid_id',
         'x_source.pchain',
         'p_screen_res',
         'rp_floor',
@@ -454,14 +474,6 @@ export const spec = {
 
     const params = bidRequest.params;
 
-    if (!params.position && bidRequest.spec && bidRequest.spec.visibility) {
-      if (bidRequest.spec.isVisible) {
-        params.position = 'atf';
-      } else {
-        params.position = 'btf';
-      }
-    }
-
     // use rubicon sizes if provided, otherwise adUnit.sizes
     const parsedSizes = parseSizes(bidRequest, 'banner');
 
@@ -477,6 +489,7 @@ export const spec = {
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
+      'l_pb_bid_id': bidRequest.bidId,
       'x_source.pchain': params.pchain,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
@@ -505,6 +518,15 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     let posMapping = {1: 'atf', 3: 'btf'};
     let pos = posMapping[deepAccess(bidRequest, 'mediaTypes.banner.pos')] || '';
+
+    if (!params.position && !pos && bidRequest.spec && bidRequest.spec.visibility) { // TAGMAN auto positioning based on visibility
+      if (bidRequest.spec.isVisible) {
+        params.position = 'atf';
+      } else {
+        params.position = 'btf';
+      }
+    }
+
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : pos;
 
     // pass publisher provided userId if configured
@@ -706,7 +728,7 @@ export const spec = {
     }
 
     // check the ad response
-    // TODO: check browser compatibility with Array.isArray and change to isArray Wrapper!    
+    // TODO: check browser compatibility with Array.isArray and change to isArray Wrapper!
     if (!Array.isArray(ads) || ads.length < 1) {
       return [];
     }
@@ -884,7 +906,7 @@ function renderBid(bid) {
       height: bid.height,
       vastUrl: bid.vastUrl,
       placement: {
-        attachTo: `#${bid.adUnitCode}`,
+        attachTo: adUnitElement,
         align: config.align || 'center',
         position: config.position || 'append'
       },

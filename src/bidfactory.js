@@ -14,16 +14,18 @@ import { getUniqueIdentifierStr, timestamp } from './utils.js';
  dealId,
  priceKeyString;
  */
-function Bid(statusCode, bidRequest) {
-  var _bidSrc = (bidRequest && bidRequest.src) || 'client';
+function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, auctionId} = {}) {
+  var _bidSrc = src;
   var _statusCode = statusCode || 0;
 
-  this.bidderCode = (bidRequest && bidRequest.bidder) || '';
+  this.bidderCode = bidder;
   this.width = 0;
   this.height = 0;
   this.statusMessage = _getStatus();
   this.adId = getUniqueIdentifierStr();
-  this.requestId = bidRequest && bidRequest.bidId;
+  this.requestId = bidId;
+  this.transactionId = transactionId;
+  this.auctionId = auctionId;
   this.mediaType = 'banner';
   this.source = _bidSrc;
 
@@ -56,6 +58,16 @@ function Bid(statusCode, bidRequest) {
     return this.width + 'x' + this.height;
   };
 
+  this.getIdentifiers = function () {
+    return {
+      src: this.source,
+      bidder: this.bidderCode,
+      bidId: this.requestId,
+      transactionId: this.transactionId,
+      auctionId: this.auctionId
+    }
+  }
+
   this.expired = function() {
     // debugger;
     if (_statusCode > 1) return true;
@@ -76,8 +88,8 @@ function Bid(statusCode, bidRequest) {
 }
 
 // Bid factory function.
-export function createBid(statusCode, bidRequest) {
-  return new Bid(statusCode, bidRequest);
+export function createBid(statusCode, identifiers) {
+  return new Bid(statusCode, identifiers);
 }
 
 export function restoreValidBid(origBid) {

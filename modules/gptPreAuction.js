@@ -1,7 +1,7 @@
-import { isGptPubadsDefined, isAdUnitCodeMatchingSlot, deepAccess, pick, logInfo } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { getHook } from '../src/hook.js';
-import find from 'core-js-pure/features/array/find.js';
+import {deepAccess, isAdUnitCodeMatchingSlot, isGptPubadsDefined, logInfo, pick} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {getHook} from '../src/hook.js';
+import {find} from '../src/polyfill.js';
 
 const MODULE_NAME = 'GPT Pre-Auction';
 export let _currentConfig = {};
@@ -93,7 +93,7 @@ export const appendPbAdSlot = adUnit => {
   // use data attribute 'data-adslotid' if set
   try {
     const adUnitCodeDiv = document.getElementById(adUnit.code);
-    if (adUnitCodeDiv.dataset.adslotid) {
+    if (adUnitCodeDiv && adUnitCodeDiv.dataset.adslotid) {
       context.pbadslot = adUnitCodeDiv.dataset.adslotid;
       return;
     }

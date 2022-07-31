@@ -1,20 +1,20 @@
 'use strict';
 
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { INSTREAM, OUTSTREAM } from '../src/video.js';
-import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { createEidsArray } from './userId/eids.js';
-import { deepClone } from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {Renderer} from '../src/Renderer.js';
+import {find} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {createEidsArray} from './userId/eids.js';
+import {deepClone} from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 /**
  * Determines whether or not the given bid request is valid.
@@ -283,14 +283,13 @@ function getSpaceCoords(req) {
   let space;
   if (req._placement && req._placement.element) { // call getElement()?
     space = req._placement.element;
-  }else{
+  } else {
     space = document.getElementById(req.adUnitCode);
   }
   if (!space) {
     return null;
   }
   try {
-     debugger;
     const { top, left, width, height } = space.getBoundingClientRect();
     let window = space.ownerDocument.defaultView;
     const coords = { top: top + window.pageYOffset, left: left + window.pageXOffset, width, height };

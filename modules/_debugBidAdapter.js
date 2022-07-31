@@ -1,9 +1,10 @@
-import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
+// import * as utils from '../src/utils.js';
+// import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {isNumber, isArray, isFn, isStr} from '../src/utils.js';
 import { createBid } from '../src/bidfactory.js';
-const CONSTANTS = require('../src/constants.json');
+// const CONSTANTS = require('../src/constants.json');
+import CONSTANTS from '../src/constants.json';
 const BIDDER_CODE = '_debugger';
 
 let creativeId = 0;
@@ -26,7 +27,7 @@ function getBidResponse(bid, size) {
     size = bid.sizes[Math.round(Math.random() * (bid.sizes.length - 1))];
   }
   if (!size) {
-    debugger;
+
   }
   let sizeStr;
   if (isArray(size)) {
@@ -81,7 +82,7 @@ function getBidResponse(bid, size) {
     } else if (isFn(priceParams.ad)) {
       bidResponse.ad = priceParams.ad(bidResponse.ad, bid, bidResponse, defaultFormats);
     }
-  } else if(bid.params.ad) {
+  } else if (bid.params.ad) {
     if (isStr(bid.params.ad)) {
       bidResponse.ad += bid.params.ad;
     } else if (isFn(bid.params.ad)) {

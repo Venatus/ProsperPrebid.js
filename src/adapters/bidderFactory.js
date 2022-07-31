@@ -6,13 +6,15 @@ import { userSync } from '../userSync.js';
 import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
-import events from '../events.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import * as events from '../events.js';
+import {includes} from '../polyfill.js';
 import { ajax } from '../ajax.js';
-import { logMessage, logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
+import {auctionManager} from '../auctionManager.js';
+import { bidderSettings } from '../bidderSettings.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
 
@@ -36,6 +38,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  * });
  *
  * @see BidderSpec for the full API and more thorough descriptions.
+ *
  */
 
 /**
@@ -130,7 +133,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  */
 
 // common params for all mediaTypes
-const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 
 const DEFAULT_REFRESHIN_DAYS = 1;
 
@@ -184,80 +187,13 @@ export function newBidder(spec) {
         return;
       }
 
-      const _requestDone = function () { logMessage("calling request DONE " + bidderRequest.bidderCode + " " + (timestamp() - bidderRequest.start) + 'ms ' + (timestamp() - bidderRequest.auctionStart) + 'ms'); if (onTimelyResponse) onTimelyResponse(); };
+      // debugger;
 
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode, bid, last) {
+      function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
-        bidderRequest.doneTime = timestamp();
-        if (isValid(adUnitCode, bid, [bidderRequest])) {
-          addBidResponse(adUnitCode, bid, last);
-        }
-        if (last) {
-          _requestDone();
-        }
-      }
-
-      function setRequestPropsFilter(requestObj, props) {
-        for (let i in props) {
-          switch (i) {
-            case 'doneTime':
-              if (!requestObj[i]) {
-                requestObj[i] = props[i];
-              }
-              break;
-            default:
-              requestObj[i] = props[i];
-          }
-        }
-      }
-      function setRequestProps(request, props) {
-        // two possible options here?
-        if (request.bidRequest) {
-          setRequestPropsFilter(request.bidRequest, props);
-        } else if (request.bidderRequest) {
-          setRequestPropsFilter(request.bidderRequest, props);
-        } else if (request.bidRequests) {
-          if (isArray(request.bidRequests)) {
-            for (let i = 0; i < request.bidRequests.length; i++) {
-              setRequestPropsFilter(request.bidRequests[i], props);
-            }
-          } else {
-            setRequestPropsFilter(request.bidRequests, props);
-          }
-        } else if (request.bids && isArray(request.bids)) {
-          for (let i = 0; i < request.bids.length; i++) {
-            setRequestPropsFilter(request.bids[i], props);
-          }
-        } else if (bidderRequest) {
-          /* debugger;
-          setRequestPropsFilter(bidderRequest, props);
-          if(bidderRequest.bids){
-            for(let i=0;i<bidderRequest.bids.length;i++){
-              setRequestPropsFilter(bidderRequest.bids[i], props);
-            }
-          } */
-        }
-      }
-
-      function markRequestDoneWithNoBids(request) {
-        setRequestProps(request, {
-          doneTime: timestamp(),
-          noBids: true,
-        });
-      }
-
-      function handleResponse(bids, request) {
-        // TODO: delegate onResponse handling to after this call via this call
-        // debugger;
-        logMessage(bidderRequest);
-        /* if(bidderRequest.bids[0].adUnitCode.indexOf('p5_0_2') !=-1 && !request.bidRequest && !request.bidderRequest){
-          debugger;
-        } */
-        logMessage("handleResponse Done ", request, bids);
-        if (!bids || bids.length == 0) {
-          markRequestDoneWithNoBids(request);
-          _requestDone();
+        if (isValid(adUnitCode, bid)) {
+          addBidResponse(adUnitCode, bid);
         }
       }
 
@@ -273,17 +209,7 @@ export function newBidder(spec) {
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
-      const invalidBidRequests = bidderRequest.bids.filter((bid) => {
-        if (validBidRequests.indexOf(bid) === -1) {
-          return true;
-        }
-        return false;
-      });
-      invalidBidRequests.forEach(bid => {
-        markRequestDoneWithNoBids({ bidRequest: bid });
-      });
       if (validBidRequests.length === 0) {
-        handleResponse([], { bidderRequest: bidderRequest });
         afterAllResponses();
         return;
       }
@@ -296,168 +222,52 @@ export function newBidder(spec) {
         }
       });
 
-      let requests = spec.buildRequests(validBidRequests, bidderRequest);
-      if (!requests || requests.length === 0) {
-        handleResponse([], { bidderRequest: bidderRequest });
-        afterAllResponses();
-        return;
-      }
-      if (!Array.isArray(requests)) {
-        requests = [requests];
-      }
-
-      // Callbacks don't compose as nicely as Promises. We should call done() once _all_ the
-      // Server requests have returned and been processed. Since `ajax` accepts a single callback,
-      // we need to rig up a function which only executes after all the requests have been responded.
-      const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
-      requests.forEach(_ => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest));
-      requests.forEach(processRequest);
-
-      function formatGetParameters(data) {
-        if (data) {
-          return `?${typeof data === 'object' ? parseQueryStringParameters(data) : data}`;
-        }
-
-        return '';
-      }
-
-      function processRequest(request) {
-        if (!request.bidRequest && !request.bidderRequest && request.bidId) {
-          if (bidRequestMap[request.bidId]) {
-            request.bidRequest = bidRequestMap[request.bidId];
-          }
-        }
-        /* if(!request.bidRequest && !request.bidderRequest && bidderRequest.bidderCode == 'ix'){
-          debugger;
-        } */
-        switch (request.method) {
-          case 'GET':
-            ajax(
-              `${request.url}${formatGetParameters(request.data)}`,
-              {
-                success: configEnabledCallback(onSuccess),
-                error: onFailure
-              },
-              undefined,
-              Object.assign({
-                method: 'GET',
-                withCredentials: true
-              }, request.options)
-            );
-            break;
-          case 'POST':
-            ajax(
-              request.url,
-              {
-                success: configEnabledCallback(onSuccess),
-                error: onFailure
-              },
-              typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-              Object.assign({
-                method: 'POST',
-                contentType: 'text/plain',
-                withCredentials: true
-              }, request.options)
-            );
-            break;
-          case 'DIRECT':
-            configEnabledCallback(onSuccess)(request.response.responseText, request.response);
-            break;
-          default:
-            logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
-            handleResponse([], request);
-            onResponse();
-        }
-
-        // If the server responds successfully, use the adapter code to unpack the Bids from it.
-        // If the adapter code fails, no bids should be added. After all the bids have been added,
-        // make sure to call the `onResponse` function so that we're one step closer to calling done().
-        function onSuccess(response, responseObj) {
+      processBidderRequests(spec, validBidRequests, bidderRequest, ajax, configEnabledCallback, {
+        onRequest: requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
+        onResponse: (resp) => {
           onTimelyResponse(spec.code);
-
-          try {
-            response = JSON.parse(response);
-          } catch (e) { /* response might not be JSON... that's ok. */ }
-
-          // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
-          response = {
-            body: response,
-            headers: headerParser(responseObj)
-          };
-          responses.push(response);
-
-          let bids;
-          try {
-            bids = spec.interpretResponse(response, request);
-          } catch (err) {
-            logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
-            handleResponse([], request);
-            onResponse();
-            return;
-          }
-
-          if (bids && isArray(bids)) {
-            let bidIds;
-            if (bids.reduce) {
-              bidIds = bids.reduce((ids, bid) => {
-                ids.push(bid.requestId);
-                return ids;
-              }, []);
-            } else {
-              bidIds = [bids.requestId];
-            }
-            markNoBidsUsingRequestMap(bidIds);
-
-            if (bids.forEach) {
-              bids.forEach(addBidUsingRequestMap);
-            } else {
-              addBidUsingRequestMap(bids, 0, [bids]); // fake triggering last element
-            }
-          }
-          handleResponse(bids, request);
-          onResponse(bids);
-
-          function markNoBidsUsingRequestMap(bidResponseIds) {
-            for (var id in bidRequestMap) {
-              if (!includes(bidResponseIds, id)) {
-                markRequestDoneWithNoBids({ bidRequest: bidRequestMap[id] });// could flag "twice" when the adepter only has 1 bid request via handleResponseCall later on
-              }
-            }
-          }
-          function addBidUsingRequestMap(bid, index, array) {
-            const bidRequest = bidRequestMap[bid.requestId];
-            if (bidRequest) {
-              // creating a copy of original values as cpm and currency are modified later
-              bid.originalCpm = bid.cpm;
-              bid.originalCurrency = bid.currency;
-              bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
-              const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
-              addBidWithCode(bidRequest.adUnitCode, prebidBid, array.length - 1 === index);
-            } else {
-              logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-            }
-          }
-
-          function headerParser(xmlHttpResponse) {
-            return {
-              get: responseObj.getResponseHeader.bind(responseObj)
-            };
-          }
-        }
-
-        // If the server responds with an error, there's not much we can do. Log it, and make sure to
-        // call onResponse() so that we're one step closer to calling done().
-        function onFailure(errorMessage, error) {
+          responses.push(resp)
+        },
+        // If the server responds with an error, there's not much we can do beside logging.
+        onError: (errorMessage, error) => {
           onTimelyResponse(spec.code);
           adapterManager.callBidderError(spec.code, error, bidderRequest)
           events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, { error, bidderRequest });
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
-          handleResponse([], request);
-          onResponse();
-        }
-      }
+        },
+        onBid: (bid) => {
+          const bidRequest = bidRequestMap[bid.requestId];
+          if (bidRequest) {
+            bid.adapterCode = bidRequest.bidder;
+            if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
+              logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
+              return;
+            }
+            // creating a copy of original values as cpm and currency are modified later
+            bid.originalCpm = bid.cpm;
+            bid.originalCurrency = bid.currency;
+            bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
+            const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
+            addBidWithCode(bidRequest.adUnitCode, prebidBid);
+          } else {
+            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+          }
+        },
+        onCompletion: afterAllResponses,
+      });
     }
   });
+
+  function isInvalidAlternateBidder(responseBidder, requestBidder) {
+    let allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes');
+    let alternateBiddersList = bidderSettings.get(requestBidder, 'allowedAlternateBidderCodes');
+    if (!!responseBidder && !!requestBidder && requestBidder !== responseBidder) {
+      if ((allowAlternateBidderCodes !== undefined && !allowAlternateBidderCodes) || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   function registerSyncs(responses, gdprConsent, uspConsent) {
     registerSyncInner(spec, responses, gdprConsent, uspConsent);
@@ -471,6 +281,146 @@ export function newBidder(spec) {
     return true;
   }
 }
+
+/**
+ * Run a set of bid requests - that entails converting them to HTTP requests, sending
+ * them over the network, and parsing the responses.
+ *
+ * @param spec bid adapter spec
+ * @param bids bid requests to run
+ * @param bidderRequest the bid request object that `bids` is connected to
+ * @param ajax ajax method to use
+ * @param wrapCallback {function(callback)} a function used to wrap every callback (for the purpose of `config.currentBidder`)
+ * @param onRequest {function({})} invoked once for each HTTP request built by the adapter - with the raw request
+ * @param onResponse {function({})} invoked once on each successful HTTP response - with the raw response
+ * @param onError {function(String, {})} invoked once for each HTTP error - with status code and response
+ * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
+ * @param onCompletion {function()} invoked once when all bid requests have been processed
+ */
+export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onError, onBid, onCompletion}) {
+  let requests = spec.buildRequests(bids, bidderRequest);
+  if (!requests || requests.length === 0) {
+    onCompletion();
+    return;
+  }
+  if (!Array.isArray(requests)) {
+    requests = [requests];
+  }
+
+  // const _bids = bids; for debugging
+
+  const requestDone = delayExecution(onCompletion, requests.length);
+
+  requests.forEach((request) => {
+    // If the server responds successfully, use the adapter code to unpack the Bids from it.
+    // If the adapter code fails, no bids should be added. After all the bids have been added,
+    // make sure to call the `requestDone` function so that we're one step closer to calling onCompletion().
+    const onSuccess = wrapCallback(function(response, responseObj) {
+      try {
+        if (response !== '') {
+          response = JSON.parse(response);
+        }
+      } catch (e) { /* response might not be JSON... that's ok. */ }
+
+      // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
+      response = {
+        body: response,
+        headers: headerParser(responseObj)
+      };
+      onResponse(response);
+
+      try {
+        markBidRequestAsDone(getNormalizedBidRequest(request, bidderRequest));
+        /* if(!(request.bidderRequest || request.bidRequest || request.bids)){
+          debugger;
+          onResponse(response);
+        } */
+      } catch (e) {
+        /* const brq = bidderRequest;
+        const bbids = _bids;
+        onResponse(response); */
+
+        logError(`Failed marking request for bidder ${spec.code} as done`.null, e, bidderRequest);
+      }
+
+      let bids;
+      try {
+        bids = spec.interpretResponse(response, request);
+      } catch (err) {
+        logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
+        requestDone();
+        return;
+      }
+
+      if (bids) {
+        if (isArray(bids)) {
+          bids.forEach(onBid);
+        } else {
+          onBid(bids);
+        }
+      }
+      requestDone();
+
+      function headerParser(xmlHttpResponse) {
+        return {
+          get: responseObj.getResponseHeader.bind(responseObj)
+        };
+      }
+    });
+
+    const onFailure = wrapCallback(function (errorMessage, error) {
+      onError(errorMessage, error);
+      requestDone();
+    });
+
+    onRequest(request);
+    switch (request.method) {
+      case 'GET':
+        ajax(
+          `${request.url}${formatGetParameters(request.data)}`,
+          {
+            success: onSuccess,
+            error: onFailure
+          },
+          undefined,
+          Object.assign({
+            method: 'GET',
+            withCredentials: true
+          }, request.options)
+        );
+        break;
+      case 'POST':
+        ajax(
+          request.url,
+          {
+            success: onSuccess,
+            error: onFailure
+          },
+          typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
+          Object.assign({
+            method: 'POST',
+            contentType: 'text/plain',
+            withCredentials: true
+          }, request.options)
+        );
+        break;
+      case 'DIRECT':
+        onSuccess(request.response.responseText, request.response);
+        break;
+      default:
+        logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
+        requestDone();
+    }
+
+    function formatGetParameters(data) {
+      if (data) {
+        return `?${typeof data === 'object' ? parseQueryStringParameters(data) : data}`;
+      }
+
+      return '';
+    }
+  })
+}, 'processBidderRequests')
 
 export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
@@ -564,16 +514,17 @@ export function getIabSubCategory(bidderCode, category) {
 }
 
 // check that the bid has a width and height set
-function validBidSize(adUnitCode, bid, bidRequests) {
+function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
   if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
     bid.width = parseInt(bid.width, 10);
     bid.height = parseInt(bid.height, 10);
     return true;
   }
 
-  const adUnit = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+  const bidRequest = index.getBidRequest(bid);
+  const mediaTypes = index.getMediaTypes(bid);
 
-  const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
+  const sizes = (bidRequest && bidRequest.sizes) || (mediaTypes && mediaTypes.banner && mediaTypes.banner.sizes);
   const parsedSizes = parseSizesInput(sizes);
 
   // if a banner impression has one valid size, we assign that size to any bid
@@ -589,7 +540,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
 }
 
 // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-export function isValid(adUnitCode, bid, bidRequests) {
+export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
     return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
@@ -614,18 +565,62 @@ export function isValid(adUnitCode, bid, bidRequests) {
     return false;
   }
 
-  if (bid.mediaType === 'native' && !nativeBidIsValid(bid, bidRequests)) {
+  if (bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }
-  if (bid.mediaType === 'video' && !isValidVideoBid(bid, bidRequests)) {
+  if (bid.mediaType === 'video' && !isValidVideoBid(bid, {index})) {
     logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
     return false;
   }
-  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, bidRequests)) {
+  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, {index})) {
     logError(errorMessage(`Banner bids require a width and height`));
     return false;
   }
 
   return true;
+}
+
+function getNormalizedBidRequest(request, bidderRequest) {
+  if (request.bidRequest) {
+    if (isArray(request.bidRequest)) {
+      return { bids: request.bidRequest }; // probably a multi-request bid(s)
+    } else {
+      return request.bidRequest; // probably a single requested bid
+    }
+  } else if (request.bidderRequest) {
+    return request.bidderRequest; // probably a multi-request bid(s)
+  } else if (request.bids && isArray(request.bids)) {
+    return { bids: request.bids }; // single separate bids, without an containing object..or something? (ex. adform)
+  // also request.bidRequests could exist..see old code..what a mess?!
+  } else if (bidderRequest) { // no request object at all?
+    // debugger; //weird...
+    if (bidderRequest.bids) {
+      return { bids: bidderRequest.bids };
+    }
+  }
+  // no known request matching found!?
+}
+
+function setRequestProps(bidObject, props) {
+  for (let i in props) {
+    switch (i) {
+      case 'doneTime':
+        if (!bidObject[i]) {
+          bidObject[i] = props[i];
+        }
+        break;
+      default:
+        bidObject[i] = props[i];
+    }
+  }
+}
+
+function markBidRequestAsDone(bidderRequest) {
+  const doneProps = {doneTime: timestamp()};
+  if (bidderRequest.bids) { // requests containing multiple bids
+    bidderRequest.bids.forEach(bid => setRequestProps(bid, doneProps));
+  } else {
+    setRequestProps(bidderRequest, doneProps);
+  }
 }

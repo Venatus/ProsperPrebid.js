@@ -6,11 +6,11 @@ import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
 import { generateUUID, logInfo } from '../src/utils.js';
+import CONSTANTS from '../src/constants.json';
 
 const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
 const analyticsType = 'endpoint';
 const analyticsName = 'Invisibly Analytics Adapter:';
-const CONSTANTS = require('../src/constants.json');
 const ajax = ajaxBuilder(0);
 
 // Events needed
@@ -44,11 +44,11 @@ const w = window;
 const d = document;
 let e = d.documentElement;
 let g = d.getElementsByTagName('body')[0];
-let x,y;
-try{
+let x, y;
+try {
   x = w.innerWidth || e.clientWidth || g.clientWidth;
   y = w.innerHeight || e.clientHeight || g.clientHeight;
-}catch(e){
+} catch (e) {
 
 }
 

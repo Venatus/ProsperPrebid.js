@@ -1,14 +1,17 @@
-import includes from 'core-js-pure/features/array/includes.js';
-import { logError, logWarn, insertElement, isArray } from './utils.js';
+import {includes} from './polyfill.js';
+import { logError, logWarn, insertElement } from './utils.js';
 
-const _requestCache = {};
+const _requestCache = new WeakMap();
 // The below list contains modules or vendors whom Prebid allows to load external JS.
 const _approvedLoadExternalJSList = [
   'adloox',
   'criteo',
   'outstream',
   'adagio',
-  'browsi'
+  'browsi',
+  'brandmetrics',
+  'justtag',
+  'akamaidap'
 ]
 
 /**
@@ -16,9 +19,10 @@ const _approvedLoadExternalJSList = [
  * Each unique URL will be loaded at most 1 time.
  * @param {string} url the url to load
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
- * @param {function} [callback] callback function to be called after the script is loaded.
+ * @param {function} [callback] callback function to be called after the script is loaded
+ * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
  */
-export function loadExternalScript(url, moduleCode, callback, context) {
+export function loadExternalScript(url, moduleCode, callback, doc) {
   if (!moduleCode || !url) {
     logError('cannot load external script without url and moduleCode');
     return;
@@ -27,8 +31,11 @@ export function loadExternalScript(url, moduleCode, callback, context) {
     logError(`${moduleCode} not whitelisted for loading external JavaScript`);
     return;
   }
+  if (!doc) {
+    doc = document; // provide a "valid" key for the WeakMap
+  }
   // only load each asset once
-  const storedCachedObject = getCacheObject(url, context);
+  const storedCachedObject = getCacheObject(doc, url);
   if (storedCachedObject) {
     if (callback && typeof callback === 'function') {
       if (storedCachedObject.loaded) {
@@ -41,15 +48,15 @@ export function loadExternalScript(url, moduleCode, callback, context) {
     }
     return storedCachedObject.tag;
   }
-  if (!isArray(_requestCache[url])) {
-    _requestCache[url] = [];
-  }
+  const cachedDocObj = _requestCache.get(doc) || {};
   const cacheObject = {
     loaded: false,
     tag: null,
     callbacks: []
   };
-  _requestCache[url].push(cacheObject);
+  cachedDocObj[url] = cacheObject;
+  _requestCache.set(doc, cachedDocObj);
+
   if (callback && typeof callback === 'function') {
     cacheObject.callbacks.push(callback);
   }
@@ -64,17 +71,17 @@ export function loadExternalScript(url, moduleCode, callback, context) {
     } catch (e) {
       logError('Error executing callback', 'adloader.js:loadExternalScript', e);
     }
-  }, context);
+  }, doc);
 
-  function requestResource(tagSrc, callback, context) {
-    if (!context) {
-      context = document;
+  function requestResource(tagSrc, callback, doc) {
+    if (!doc) {
+      doc = document;
     }
-    var jptScript = context.createElement('script');
+    var jptScript = doc.createElement('script');
     jptScript.type = 'text/javascript';
     jptScript.async = true;
 
-    const cacheObject = getCacheObject(url, context);
+    const cacheObject = getCacheObject(doc, url);
     if (cacheObject) {
       cacheObject.tag = jptScript;
     }
@@ -95,17 +102,14 @@ export function loadExternalScript(url, moduleCode, callback, context) {
     jptScript.src = tagSrc;
 
     // add the new script tag to the page
-    insertElement(jptScript, context);
+    insertElement(jptScript, doc);
 
     return jptScript;
   }
-  function getCacheObject(url, context) {
-    if(_requestCache[url]) {
-      for (let i = 0; i < _requestCache[url].length; i++) {
-        if (_requestCache[url][i].context === context) {
-          return _requestCache[url][i];
-        }
-      }
+  function getCacheObject(doc, url) {
+    const cachedDocObj = _requestCache.get(doc);
+    if (cachedDocObj && cachedDocObj[url]) {
+      return cachedDocObj[url];
     }
     return null; // return new cache object?
   }

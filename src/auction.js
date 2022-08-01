@@ -379,130 +379,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       }
     })(requestMap);
   }
-  /* function bidsBackAdUnitOld(timedOutBidders){
-    //debugger;
-    const bidReq = _bidderRequests;
-    const bidRes = _bidsReceived;
-    const bidTmo = (timedOutBidders && timedOutBidders.length) ?
-    timedOutBidders.reduce((tmo, bid) => {
-      if(!tmo[bid.adUnitCode]){
-        tmo[bid.adUnitCode] = {};
-      }
-      if(!tmo[bid.adUnitCode][bid.bidder]){
-        tmo[bid.adUnitCode][bid.bidder] = true;
-      }
-      return tmo;
-    },{}) : {};
-
-    const bidsInFlight = _bidderRequests.reduce((inFlight, bidder)=>{
-      if(!bidder.doneCbCallCount
-        && find(_bidsReceived, (bid) => bid.bidderCode == bidder.bidderCode)){//very inefficient as we need to loop through all received bids for every bidder
-        inFlight[bidder.bidderCode] = true;
-      }
-      return inFlight;
-    },{});//when a bid response triggers a timeout, the bidRequest isn't flagged on the doneCbCallCount property, filter out those bidSets
-
-    const plcDone = _bidderRequests.reduce((placements,bidder) => {
-      if(bidder.bids && bidder.bids.length){
-        bidder.bids.reduce((placements,bid) =>{
-          /*if(_adUnitsDone[bid.adUnitCode]){
-            return placements;//this placement has been flagged as done earlier..it's possible bids arrived late in this case. TODO: deal with late arrivals
-          }* /
-          if(!placements[bid.adUnitCode]){
-            placements[bid.adUnitCode] = {
-              requests:0,
-              responses:0,
-              timeouts:0,
-              bidders:{},
-            }
-          }
-          if(!placements[bid.adUnitCode].bidders[bidder.bidderCode]){
-            placements[bid.adUnitCode].bidders[bidder.bidderCode] = { bids: []};
-          }
-
-          placements[bid.adUnitCode].requests++;
-          placements[bid.adUnitCode].bidders[bidder.bidderCode].bids.push(bid);
-
-          //console.log(bid.adUnitCode+" "+bid.bidder+"/"+bid.bidderCode+" "+placements[bid.adUnitCode].requests+" "+placements[bid.adUnitCode].responses+" "+placements[bid.adUnitCode].timeouts);
-          if(bidder.doneCbCallCount || bidsInFlight[bidder.bidderCode]){
-            placements[bid.adUnitCode].responses++;
-          }else if(bidTmo[bid.adUnitCode] && bidTmo[bid.adUnitCode][bid.bidder]){
-            placements[bid.adUnitCode].timeouts++;
-          }else{
-            //console.log("bid neither done or timeout", bid);
-          }
-          return placements;
-        },placements);
-      }
-      return placements;
-    },{});
-
-    //console.log(plcDone, bidTmo, bidsInFlight);
-
-    const bidsResps = _bidsReceived.reduce(groupByPlacement, {});
-
-    for(let i in plcDone){
-      if(plcDone[i].requests <= plcDone[i].responses + plcDone[i].timeouts){
-        //_adUnitsDone[i] = true;
-        const bidResp = {};
-        bidResp[i] = { bids: [] };
-        let availBids = {};
-        if(bidsResps[i] && bidsResps[i].bids){
-          bidResp[i].bids.splice.apply(bidResp[i].bids, [bidResp[i].bids.length, 0].concat(bidsResps[i].bids));
-          availBids = groupBy(bidResp[i].bids, "bidderCode");
-        }
-        for(let j=0;j<_bidderRequests.length;j++){
-          const bid=_bidderRequests[j];
-          const baseBid = (plcDone[i].bidders[bid.bidderCode] && plcDone[i].bidders[bid.bidderCode].bids[0] || { bidder: bid.bidderCode, timeToRespond: (bid.doneTime - bid.start) });
-          let bidRsp;
-          if(availBids[bid.bidderCode]) continue;
-          if(bidTmo[i] && bidTmo[i][bid.bidderCode]){
-            bidRsp = bidfactory.createBid(CONSTANTS.STATUS.TIMEOUT, baseBid);
-          }else{
-            if(!baseBid.timeToRespond && (bid && bid.doneTime && bid.start)){
-              baseBid.timeToRespond = bid.doneTime - bid.start;
-            }
-            bidRsp = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, baseBid);
-            if(!bidRsp.timeToRespond){
-              bidRsp.timeToRespond = baseBid.timeToRespond;
-            }
-          }
-          bidRsp.cpm = 0;
-          bidResp[i].bids.push(bidRsp);
-        }
-        if(!_adUnitsDone[i]){
-          events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, bidResp, [i]);
-        }else if(_adUnitsDone[i] != plcDone[i].responses){
-          debugger;
-          //the responses changed probably late arrivals, emit changed event
-          events.emit(CONSTANTS.EVENTS.AD_UNIT_UPDATED, bidResp, [i]);
-        }
-        _adUnitsDone[i] = plcDone[i].responses;
-      }
-    }
-    //const bidsReqForAdUnit = getBidRequestsByAdUnit([request.adUnitCode]).filter(bid => bid.auctionId === request.auctionId);
-    //const bidsRspForAdUnit = getBidResponsesByAdUnit([request.adUnitCode]).filter(bid => bid.auctionId === request.auctionId);
-
-    //console.log(bidsReqForAdUnit, bidsRspForAdUnit);
-    /*if (bidsForAdUnit.every((bid)=>{bid.doneCbCallCount>=1})){
-      const bidsResps = auctionInstance.getBidResponsesByAdUnit([bidResponse.adUnitCode])
-      .reduce(groupByPlacement, {});
-      bidsRespObj[bidResponse.adUnitCode] = {bids: bidsResps};
-      events.emit(CONSTANTS.EVENTS.AD_UNIT_COMPLETE, [bidsRespObj], [bidResponse.adUnitCode]);
-    }* /
-  } */
-
-  /**
-   * Execute bidBackHandler if all bidders have called done.
-   */
-  /* function bidsBackAll() {
-    if (_bidderRequests.every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
-      // when all bidders have called done callback atleast once it means auction is complete
-      utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
-      _auctionStatus = AUCTION_COMPLETED;
-      executeCallback(false, true);
-    }
-  } */
 
   function callBids() {
     _auctionStatus = AUCTION_STARTED;
@@ -766,17 +642,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     if (allAdapterCalledDone && outstandingBidsAdded === 0) {
       auctionDone();
     }
-  }
-
-  // let lastCall = null;
-  // let onRespTimeoutId = null;
-  // function onResponseDone() {
-  //   debugger;
-  //   lastCall = timestamp();
-  //   clearTimeout(onRespTimeoutId);
-  //   onRespTimeoutId = null;
-  //   auctionInstance.bidsBackAdUnit();
-  // }
+  }  
 
   return {
     addBidResponse: function (adUnit, bid) {
@@ -788,21 +654,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     },
     adapterDone: function () {
       guard(this, adapterDone.bind(this))
-    },
-    // onResponseDone: function () {
-    //   return onResponseDone();
-    //   // debouncing
-    //   // not worth it for now
-    //   /* if(lastCall==null && onRespTimeoutId == null)
-    //     return onResponseDone();
-    //   if(timestamp()-lastCall>5 && onRespTimeoutId == null){
-    //     //debugger;
-    //     return onResponseDone();
-    //   }else if(onRespTimeoutId == null){
-    //     debugger;
-    //     onRespTimeoutId = setTimeout(onResponseDone, 3);
-    //   } */
-    // }
+    }    
   }
 }
 

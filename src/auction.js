@@ -644,6 +644,28 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getBidRequestsByAdUnit: getBidRequestsByAdUnit,
     getBidResponsesByAdUnit: getBidResponsesByAdUnit,
     bidsBackAdUnit: bidsBackAdUnit,
+    /*cleanExpiredBids: () => {
+      const x = _bidsReceived.filter(bid => { return !bid.expired() } );
+      if(x.length != _bidsReceived.length){
+        debugger;
+      }
+    },*/
+    hasAvailableBids: () => {
+      const x = _bidsReceived.filter(bid => { return !bid.expired() } );
+      if(x.length == 0 && _bidsReceived.length > 0){
+        // debugger;
+        return false;
+      }
+      return true;
+    },
+    destroy: () => {
+      _bidderRequests.length = 0;
+      _bidsReceived.length = 0;
+      _adUnitCodes.length = 0;
+      _adUnits.length = 0;
+      _winningBids.length = 0;
+      _noBids.length = 0;
+    }
   }
 }
 

@@ -19,7 +19,7 @@
  * @property {function(): void} clearAllAuctions - clear all auctions for testing
  */
 
-import { uniques, flatten, logWarn } from './utils.js';
+import { uniques, flatten, logWarn, timestamp } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
 import { restoreValidBid } from './bidfactory.js';
 import {find} from './polyfill.js';
@@ -90,8 +90,14 @@ export function newAuctionManager() {
   };
 
   auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }) {
+    try{
+      auctionManager.cleanExpiredAuctions();// maybe have a janator job..to clean them instead
+    }catch(e){
+      debugger;
+    }
+
     const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId });
-    _addAuction(auction);
+    _addAuction(auction);    
     return auction;
   };
 
@@ -119,6 +125,17 @@ export function newAuctionManager() {
 
   auctionManager.clearAllAuctions = function() {
     _auctions.length = 0;
+  }
+  
+  auctionManager.cleanExpiredAuctions = function(){
+    for(let i=0;i<_auctions.length;i++){      
+      if(!_auctions[i].hasAvailableBids() && timestamp() - _auctions[i].getAuctionStart() > (300 + 60) * 1000){
+        // debugger;
+        _auctions[i].destroy();
+        _auctions.splice(i, 1);
+        i--;        
+      }
+    }
   }
 
   auctionManager.addBids = function(bids) {

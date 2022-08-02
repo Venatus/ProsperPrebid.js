@@ -9,7 +9,7 @@ import CONSTANTS from '../constants.json';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isNumber, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
@@ -190,10 +190,10 @@ export function newBidder(spec) {
       // debugger;
 
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode, bid) {
+      function addBidWithCode(adUnitCode, bid, isLast) {
         adUnitCodesHandled[adUnitCode] = true;
         if (isValid(adUnitCode, bid)) {
-          addBidResponse(adUnitCode, bid);
+          addBidResponse(adUnitCode, bid, isLast);
         }
       }
 
@@ -235,7 +235,7 @@ export function newBidder(spec) {
           events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, { error, bidderRequest });
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
         },
-        onBid: (bid) => {
+        onBid: (bid, bidI, bids) => {
           const bidRequest = bidRequestMap[bid.requestId];
           if (bidRequest) {
             bid.adapterCode = bidRequest.bidder;
@@ -248,7 +248,11 @@ export function newBidder(spec) {
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
             const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
-            addBidWithCode(bidRequest.adUnitCode, prebidBid);
+            let isLast = true;
+            if(isNumber(bidI) && isArray(bids)){
+              isLast = bids.length -1 == bidI;
+            }
+            addBidWithCode(bidRequest.adUnitCode, prebidBid, isLast);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
           }

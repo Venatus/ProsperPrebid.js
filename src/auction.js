@@ -545,8 +545,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 }
 
-export const addBidResponse = hook('sync', function(adUnitCode, bid) {
-  this.dispatch.call(null, adUnitCode, bid);
+export const addBidResponse = hook('sync', function(adUnitCode, bid, isLast) {
+  this.dispatch.call(null, adUnitCode, bid, isLast);
 }, 'addBidResponse');
 
 export const addBidderRequests = hook('sync', function(bidderRequests) {
@@ -598,8 +598,16 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     }
   }
 
-  function handleBidResponse(adUnitCode, bid) {
+  const isLastBidsStore = {}; // map to store the isLast flag, since it's lost in in fn.next call's, since the in between methods don't pass all arguments
+  function handleBidResponse(adUnitCode, bid, isLast) {
     bidResponseMap[bid.requestId] = true;
+
+    if(typeof(isLast) == 'undefined' || arguments.length == 2){
+      // debugger;
+      if(typeof(isLastBidsStore[bid.requestId]) != 'undefined'){
+        isLast = isLastBidsStore[bid.requestId];
+      }
+    }
 
     outstandingBidsAdded++;
     let auctionId = auctionInstance.getAuctionId();
@@ -607,9 +615,9 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     let bidResponse = getPreparedBidForAuction({adUnitCode, bid, auctionId});
 
     if (bidResponse.mediaType === 'video') {
-      tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded);
+      tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, isLast);
     } else {
-      addBidToAuction(auctionInstance, bidResponse);
+      addBidToAuction(auctionInstance, bidResponse, isLast);
       afterBidAdded();
     }
   }
@@ -645,12 +653,13 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   }  
 
   return {
-    addBidResponse: function (adUnit, bid) {
+    addBidResponse: function (adUnit, bid, isLast) {
       // debugger;
       const bidderRequest = index.getBidderRequest(bid);
+      isLastBidsStore[bid.requestId] = isLast;
       waitFor((bidderRequest && bidderRequest.bidderRequestId) || '', addBidResponse.call({
         dispatch: handleBidResponse,
-      }, adUnit, bid));
+      }, adUnit, bid, isLast));
     },
     adapterDone: function () {
       guard(this, adapterDone.bind(this))
@@ -658,28 +667,31 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   }
 }
 
-export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
+export function doCallbacksIfTimedout(auctionInstance, bidResponse, isLast) {
   // TODO: make this configurable, as this tries to steal the JS-(micro)task in favour of just waiting for the timeout to be called
   // debugger;
-  if (bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
+  if(typeof(isLast) == 'undefined' || arguments.length == 2){ //isLast get's lost in function hooks, as the in between hooks, don't pass the paramter along
+    isLast = true;
+  }
+  if (isLast && bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
     logInfo('auction timed out, by bid response', bidResponse);
     auctionInstance.executeCallback(true);
   }
 }
 
 // Add a bid to the auction.
-export function addBidToAuction(auctionInstance, bidResponse) {
+export function addBidToAuction(auctionInstance, bidResponse, isLast) {
   setupBidTargeting(bidResponse);
 
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
   auctionInstance.bidsBackAdUnit();// evaluate all bids per adunit for each received response, to mark the adunit complete
   // debugger;
-  doCallbacksIfTimedout(auctionInstance, bidResponse);
+  doCallbacksIfTimedout(auctionInstance, bidResponse, isLast);
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
-function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
+function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, isLast, {index = auctionManager.index} = {}) {
   let addBid = true;
 
   const videoMediaType = deepAccess(
@@ -692,24 +704,24 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {
     if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
       addBid = false;
-      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
+      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType, isLast);
     } else if (!bidResponse.vastUrl) {
       logError('videoCacheKey specified but not required vastUrl for video bid');
       addBid = false;
     }
   }
   if (addBid) {
-    addBidToAuction(auctionInstance, bidResponse);
+    addBidToAuction(auctionInstance, bidResponse, isLast);
     afterBidAdded();
   }
 }
 
-export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
+export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType, isLast) {
   store([bidResponse], function (error, cacheIds) {
     if (error) {
       logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
 
-      doCallbacksIfTimedout(auctionInstance, bidResponse);
+      doCallbacksIfTimedout(auctionInstance, bidResponse, isLast);
     } else {
       if (cacheIds[0].uuid === '') {
         logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
@@ -721,7 +733,7 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
         if (!bidResponse.vastUrl) {
           bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
         }
-        addBidToAuction(auctionInstance, bidResponse);
+        addBidToAuction(auctionInstance, bidResponse, isLast);
         afterBidAdded();
       }
     }

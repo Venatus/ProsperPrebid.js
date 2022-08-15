@@ -35,6 +35,7 @@ let isGlobalDone = false;
 let cmpVersion = 0;
 let consentData;
 let addedConsentHook = false;
+let provisionalConsent;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -110,6 +111,8 @@ function lookupIabConsent({onSuccess, onError, width, height}) {
     if (success) {
       if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         processCmpData(tcfData, {onSuccess, onError});
+      } else {
+        provisionalConsent = tcfData;
       }
     } else {
       onError('CMP unable to register callback function.  Please check CMP setup.');
@@ -352,18 +355,25 @@ function loadConsentData(cb, width = 1, height = 1) {
   });
 
   if (!isDone) {
+    const onTimeout = () => {
+      if (cmpVersion === 2) {
+        // for TCFv2, we allow the auction to continue on timeout
+        const continueToAuction = (data) => {
+          done(data, false, 'CMP did not load, continuing auction...');
+        }
+        processCmpData(provisionalConsent, {
+          onSuccess: continueToAuction,
+          onError: () => continueToAuction(storeConsentData(undefined))
+        })
+      } else {
+        callbacks.onError('CMP workflow exceeded timeout threshold.');
+      }
+    }
     if (consentTimeout === 0) {
-      processCmpData(undefined, callbacks);
+      onTimeout();
     } else {
       clearTimeout(timer); // timeout is called twice, once from; setConsentConfig and once via requestBidHoook
-      timer = setTimeout(function () {
-        if (cmpVersion === 2) {
-          // for TCFv2, we allow the auction to continue on timeout
-          done(storeConsentData(undefined), false, `No response from CMP, continuing auction...`)
-        } else {
-          callbacks.onError('CMP workflow exceeded timeout threshold.');
-        }
-      }, consentTimeout);
+      timer = setTimeout(onTimeout, consentTimeout);
     }
   }
 }
@@ -450,7 +460,7 @@ function processCmpData(consentObject, {onSuccess, onError}) {
     let tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
-      (gdprApplies === true && !isStr(tcString))
+      (gdprApplies === true && (!tcString || !isStr(tcString)))
     );
   }
 

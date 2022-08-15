@@ -466,6 +466,7 @@ describe('User ID', function () {
     describe('refreshing before init is complete', () => {
       const MOCK_ID = {'MOCKID': '1111'};
       let mockIdCallback;
+      let startInit;
 
       beforeEach(() => {
         mockIdCallback = sinon.stub();
@@ -480,7 +481,7 @@ describe('User ID', function () {
         };
         init(config);
         setSubmoduleRegistry([mockIdSystem]);
-        config.setConfig({
+        startInit = () => config.setConfig({
           userSync: {
             auctionDelay: 10,
             userIds: [{
@@ -492,6 +493,7 @@ describe('User ID', function () {
       });
 
       it('should still resolve promises returned by getUserIdsAsync', () => {
+        startInit();
         let result = null;
         getGlobal().getUserIdsAsync().then((val) => { result = val; });
         return clearStack().then(() => {
@@ -506,6 +508,7 @@ describe('User ID', function () {
       it('should not stop auctions', (done) => {
         // simulate an infinite `auctionDelay`; refreshing should still allow the auction to continue
         // as soon as ID submodules have completed init
+        startInit();
         requestBidsHook(() => {
           done();
         }, {adUnits: [getAdUnitMock()]}, {delay: delay()});
@@ -519,6 +522,7 @@ describe('User ID', function () {
       it('should not get stuck when init fails', () => {
         const err = new Error();
         mockIdCallback.callsFake(() => { throw err; });
+        startInit();
         return getGlobal().getUserIdsAsync().catch((e) =>
           expect(e).to.equal(err)
         );
@@ -1821,7 +1825,7 @@ describe('User ID', function () {
         }, {adUnits});
       });
 
-      it('test hook from merkleId cookies', function (done) {
+      it('test hook from merkleId cookies - legacy', function (done) {
         // simulate existing browser local storage values
         coreStorage.setCookie('merkleId', JSON.stringify({'pam_id': {'id': 'testmerkleId', 'keyID': 1}}), (new Date(Date.now() + 5000).toUTCString()));
 
@@ -1838,6 +1842,32 @@ describe('User ID', function () {
                 source: 'merkleinc.com',
                 uids: [{id: 'testmerkleId', atype: 3, ext: {keyID: 1}}]
               });
+            });
+          });
+          coreStorage.setCookie('merkleId', '', EXPIRED_COOKIE_DATE);
+          done();
+        }, {adUnits});
+      });
+
+      it('test hook from merkleId cookies', function (done) {
+        // simulate existing browser local storage values
+        coreStorage.setCookie('merkleId', JSON.stringify({
+          'merkleId': [{id: 'testmerkleId', ext: { keyID: 1, ssp: 'ssp1' }}, {id: 'another-random-id-value', ext: { ssp: 'ssp2' }}],
+          '_svsid': 'svs-id-1'
+        }), (new Date(Date.now() + 5000).toUTCString()));
+
+        init(config);
+        setSubmoduleRegistry([merkleIdSubmodule]);
+        config.setConfig(getConfigMock(['merkleId', 'merkleId', 'cookie']));
+
+        requestBidsHook(function () {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userId.merkleId');
+              expect(bid.userId.merkleId.length).to.equal(2);
+              expect(bid.userIdAsEids.length).to.equal(2);
+              expect(bid.userIdAsEids[0]).to.deep.equal({ source: 'ssp1.merkleinc.com', uids: [{id: 'testmerkleId', atype: 3, ext: { keyID: 1, ssp: 'ssp1' }}] });
+              expect(bid.userIdAsEids[1]).to.deep.equal({ source: 'ssp2.merkleinc.com', uids: [{id: 'another-random-id-value', atype: 3, ext: { ssp: 'ssp2' }}] });
             });
           });
           coreStorage.setCookie('merkleId', '', EXPIRED_COOKIE_DATE);
@@ -2509,7 +2539,6 @@ describe('User ID', function () {
 
         // init id system
         attachIdSystem(mockIdSystem);
-        config.setConfig(userIdConfig);
       });
 
       afterEach(function () {
@@ -2519,6 +2548,8 @@ describe('User ID', function () {
       it('calls getId if no stored consent data and refresh is not needed', function () {
         coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
@@ -2533,6 +2564,8 @@ describe('User ID', function () {
       it('calls getId if no stored consent data but refresh is needed', function () {
         coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 60 * 1000).toUTCString()), expStr);
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
@@ -2550,6 +2583,8 @@ describe('User ID', function () {
 
         setStoredConsentData();
 
+        config.setConfig(userIdConfig);
+
         let innerAdUnits;
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2566,6 +2601,8 @@ describe('User ID', function () {
 
         setStoredConsentData({...consentData, consentString: 'different'});
 
+        config.setConfig(userIdConfig);
+
         let innerAdUnits;
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2581,6 +2618,8 @@ describe('User ID', function () {
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
 
         setStoredConsentData({...consentData});
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {

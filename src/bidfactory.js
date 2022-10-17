@@ -66,7 +66,7 @@ function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, auc
       transactionId: this.transactionId,
       auctionId: this.auctionId
     }
-  }
+  };
 
   this.expired = function() {
     // debugger;
@@ -94,9 +94,16 @@ export function createBid(statusCode, identifiers) {
 
 export function restoreValidBid(origBid) {
   const bid = createBid(1, origBid);
-  const {adId, width, height, ad, requestTimestamp, ttl, cpm, originalCPM, originalCurrent, ...rest} = origBid;
+  const {xxx, adId, width, height, ad, requestTimestamp, ttl, cpm, originalCPM, originalCurrent, ...rest} = origBid;
+  try{
+    if(bid.bidderCode && bid.bidderCode.indexOf('debugger')==-1){
+      debugger;
+    }
+  }catch(e){
+    debugger;
+  }
   if (rest) {
-
+    
   }
   bid.adId = adId;
   bid.ad = ad;

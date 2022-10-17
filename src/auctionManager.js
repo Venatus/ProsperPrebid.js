@@ -25,6 +25,7 @@ import { restoreValidBid } from './bidfactory.js';
 import {find} from './polyfill.js';
 import {AuctionIndex} from './auctionIndex.js';
 import CONSTANTS from './constants.json';
+import {useMetrics} from './utils/perfMetrics.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -38,6 +39,10 @@ export function newAuctionManager() {
   let store = null;
 
   auctionManager.addWinningBid = function(bid) {
+    const metrics = useMetrics(bid.metrics);
+    metrics.checkpoint('bidWon');
+    metrics.timeBetween('auctionEnd', 'bidWon', 'render.pending');
+    metrics.timeBetween('requestBids', 'bidWon', 'render.e2e');
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
       bid.status = CONSTANTS.BID_STATUS.RENDERED;
@@ -89,15 +94,15 @@ export function newAuctionManager() {
       .filter(uniques);
   };
 
-  auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }) {
+  auctionManager.createAuction = function(opts) {
     try{
       auctionManager.cleanExpiredAuctions();// maybe have a janator job..to clean them instead
     }catch(e){
       debugger;
     }
 
-    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId });
-    _addAuction(auction);    
+    const auction = newAuction(opts);
+    _addAuction(auction);
     return auction;
   };
 

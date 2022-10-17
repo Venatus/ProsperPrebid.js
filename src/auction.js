@@ -166,6 +166,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     // clear timer when done calls executeCallback
     // if (cleartimer) { always clear timer
     clearTimeout(_timer);
+    _timer = -1;
     // }
 
     if (_auctionEnd === undefined) {

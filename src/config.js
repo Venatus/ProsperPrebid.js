@@ -30,7 +30,7 @@ const DEFAULT_MAX_NESTED_IFRAMES = 10;
 // eslint-disable-next-line no-unused-vars
 const DEFAULT_THREAD_EMPTYBIDS_AS_BIDS = false;
 
-const DEFAULT_TIMEOUTBUFFER = 400;
+const DEFAULT_TIMEOUTBUFFER = 523;
 
 export const RANDOM = 'random';
 const FIXED = 'fixed';

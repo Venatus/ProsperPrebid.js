@@ -464,6 +464,29 @@ export const spec = {
     }
 
     return params;
+  },
+  restoreRenderer: function(bid, adunit){
+    if(arguments.length == 1 && bid.bid && bid.adunit){
+      adunit = bid.adunit;
+      bid = bid.bid;
+    }
+    if(bid.renderer && !bid.renderer.render){
+      if(bid.mediaType == VIDEO){
+        const videoContext = deepAccess(adunit, 'mediaTypes.video.context');
+        debugger;
+        switch(videoContext){
+          case OUTSTREAM:
+            let rendererOptions = deepAccess(adunit, 'mediaTypes.video.renderer.options'); // mediaType definition has preference (shouldn't options be .config?)
+            if (!rendererOptions) {
+              rendererOptions = deepAccess(adunit, 'renderer.options'); // second the adUnit definition has preference (shouldn't options be .config?)
+            }
+            debugger;
+            bid.renderer = newRenderer(bid.adUnitCode, {renderer_id:bid.renderer.id,renderer_url:bid.renderer.url}, rendererOptions);
+          break;
+        }
+      }
+    }
+    debugger;
   }
 };
 

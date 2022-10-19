@@ -608,4 +608,9 @@ adapterManager.callBidderError = function(bidder, error, bidderRequest) {
   tryCallBidderMethod(bidder, 'onBidderError', param);
 };
 
+adapterManager.callRestoreBidRenderer = function(bid, adunit) {  
+  const param = { bid, adunit };
+  tryCallBidderMethod(bid.bidderCode || bid.bidder || bid.adapterCode, 'restoreRenderer', param);
+};
+
 export default adapterManager;

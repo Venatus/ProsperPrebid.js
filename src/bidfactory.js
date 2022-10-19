@@ -94,9 +94,11 @@ export function createBid(statusCode, identifiers) {
 
 export function restoreValidBid(origBid) {
   const bid = createBid(1, origBid);
-  const {xxx, adId, width, height, ad, requestTimestamp, ttl, cpm, originalCPM, originalCurrent, ...rest} = origBid;
+  const {adId, adapterCode, adResponse, adUnitCode, bidder, bidderCode, width, height, ad, mediaType, renderer, requestTimestamp, ttl, cpm, originalCPM, originalCurrency, ...rest} = origBid;
   try{
     if(bid.bidderCode && bid.bidderCode.indexOf('debugger')==-1){
+      debugger;
+    }else if(!bid.bidderCode){
       debugger;
     }
   }catch(e){
@@ -106,12 +108,19 @@ export function restoreValidBid(origBid) {
     
   }
   bid.adId = adId;
+  bid.adapterCode = adapterCode;
+  bid.adResponse = adResponse;
+  bid.adUnitCode = adUnitCode;
+  bid.bidder = bidder;
+  bid.bidderCode = bidderCode;
   bid.ad = ad;
   bid.cpm = cpm;
+  bid.mediaType = mediaType;
   bid.originalCPM = originalCPM;
   bid.width = width;
   bid.height = height;
   bid.requestTimestamp = requestTimestamp;
+  bid.renderer = renderer;
   bid.ttl = ttl;
   return bid;
 }

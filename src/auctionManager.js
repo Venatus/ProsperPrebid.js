@@ -25,6 +25,7 @@ import { restoreValidBid } from './bidfactory.js';
 import {find} from './polyfill.js';
 import {AuctionIndex} from './auctionIndex.js';
 import CONSTANTS from './constants.json';
+import adapterManager from './adapterManager.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -91,7 +92,7 @@ export function newAuctionManager() {
 
   auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }) {
     try{
-      auctionManager.cleanExpiredAuctions();// maybe have a janator job..to clean them instead
+      auctionManager.cleanExpiredAuctions();// maybe have a janitor job..to clean them instead
     }catch(e){
       debugger;
     }
@@ -138,16 +139,23 @@ export function newAuctionManager() {
     }
   }
 
-  auctionManager.addBids = function(bids) {
+  auctionManager.addBids = function(bids, adunit) {
     if (!store) {
       store = this.createAuction({
         adUnits: [],
         adUnitCodes: []
       });
     }
+
     const bidsCopy = bids.map(bid => {
       return restoreValidBid(bid);
     });
+
+    bidsCopy.forEach((bid) =>
+    {
+      adapterManager.callRestoreBidRenderer(bid, adunit);
+    });
+
     store.addBidReceived(bidsCopy); // TODO: remove duplicate bid.adId!
     return store;
   }

@@ -532,6 +532,16 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
           callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
         }
         break;
+      case 'DIRECT':
+        onSuccess(request.response.responseText, request.response);
+      break;
+      case 'PROMISE':
+        request.promise
+        .then((response)=>{
+          onSuccess(response.responseText, response);
+        })
+        .catch((error)=>{onFailure(error)});
+      break;          
       default:
         logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
         requestDone();

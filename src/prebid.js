@@ -51,6 +51,7 @@ import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
+import {registerBidder} from './adapters/bidderFactory.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -1019,6 +1020,9 @@ if (FEATURES.VIDEO) {
     }
   }
 }
+
+/** register a bidder */
+pbjsInstance.registerBidder = registerBidder;
 
 /**
  * Get Prebid config options

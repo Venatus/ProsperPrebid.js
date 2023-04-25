@@ -48,6 +48,7 @@ import {
 } from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults, validateOrtbVideoFields} from './video.js';
+import {registerBidder} from './adapters/bidderFactory.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -930,6 +931,9 @@ if (FEATURES.VIDEO) {
     }
   }
 }
+
+/** register a bidder */
+pbjsInstance.registerBidder = registerBidder;
 
 /**
  * Get Prebid config options

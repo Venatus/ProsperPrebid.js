@@ -43,6 +43,7 @@ import {allConsent} from './consentHandler.js';
 import {renderAdDirect} from '../libraries/creativeRender/direct.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults} from './video.js';
+import {registerBidder} from './adapters/bidderFactory.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -893,6 +894,9 @@ const fetchReceivedBids = (bidRequest, warningMessage) => {
 
   return bids;
 };
+
+/** register a bidder */
+pbjsInstance.registerBidder = registerBidder;
 
 /**
  * Get Prebid config options

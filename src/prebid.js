@@ -51,6 +51,7 @@ import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './v
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
 import { newBidder } from './adapters/bidderFactory.js';
+import {registerBidder} from './adapters/bidderFactory.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -956,6 +957,9 @@ if (FEATURES.VIDEO) {
     }
   }
 }
+
+/** register a bidder */
+pbjsInstance.registerBidder = registerBidder;
 
 /**
  * Get Prebid config options

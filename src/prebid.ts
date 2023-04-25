@@ -66,6 +66,7 @@ import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
+import {registerBidder} from './adapters/bidderFactory.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -428,8 +429,13 @@ declare module './prebidGlobal' {
         setBidderConfig: typeof config.setBidderConfig;
         processQueue: typeof processQueue;
         triggerBilling: typeof triggerBilling;
+
+        registerBidder: typeof registerBidder;
     }
 }
+
+/** register a bidder */
+addApiMethod('registerBidder', registerBidder);
 
 // Allow publishers who enable user sync override to trigger their sync
 addApiMethod('triggerUserSyncs', triggerUserSyncs);

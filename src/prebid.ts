@@ -67,6 +67,8 @@ import type { BidderSettingsMap } from "./bidderSettings.ts";
 import { fillAudioDefaults, ORTB_AUDIO_PARAMS } from './audio.ts';
 import { type WrapsInBids, wrapInBids } from "./utils/wrapsInBids.ts";
 
+import {registerBidder} from './adapters/bidderFactory.js';
+
 import { getGlobalVarName } from "./buildOptions.ts";
 import { yieldAll } from "./utils/yield.ts";
 
@@ -485,8 +487,13 @@ declare module './prebidGlobal' {
     processQueue: typeof processQueue;
     triggerBilling: typeof triggerBilling;
     refreshPageViewId: typeof refreshPageViewId;
+
+    registerBidder: typeof registerBidder;
   }
 }
+
+/** register a bidder */
+addApiMethod('registerBidder', registerBidder);
 
 // Allow publishers who enable user sync override to trigger their sync
 addApiMethod('triggerUserSyncs', triggerUserSyncs);

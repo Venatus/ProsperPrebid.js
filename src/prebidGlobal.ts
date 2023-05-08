@@ -44,7 +44,11 @@ export function getGlobal() {
 }
 
 export function registerModule(name: string) {
-  if (!global.installedModules.includes(name)) {
-    global.installedModules.push(name);
+  if (!global.installedModules) {
+    global.que.push(() => registerModule(name));
+  } else {
+    if (!global.installedModules.includes(name)) {
+      global.installedModules.push(name);
+    }
   }
 }

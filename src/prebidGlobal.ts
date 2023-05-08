@@ -44,5 +44,7 @@ export function getGlobal() {
 }
 
 export function registerModule(name: string) {
-  global.installedModules.push(name);
+  if (!global.installedModules.includes(name)) {
+    global.installedModules.push(name);
+  }
 }

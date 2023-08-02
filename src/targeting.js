@@ -53,6 +53,10 @@ const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_STATUS.RENDERED], bid.status)) || !bid.status);
 
+const bidTTL = (bid)=>{
+  return ((bid.responseTimestamp + (bid.ttl - (bid.hasOwnProperty('ttlBuffer') ? bid.ttlBuffer : DEFAULT_TTL_BUFFER)) * 1000) - timestamp());
+};
+
 export let filters = {
   isActualBid(bid) {
     return bid.getStatusCode() === STATUS.GOOD
@@ -60,6 +64,10 @@ export let filters = {
   isBidNotExpired,
   isUnusedBid
 };
+
+export let functions = {
+  bidTTL:bidTTL,
+}
 
 export function isBidUsable(bid) {
   return !Object.values(filters).some((predicate) => !predicate(bid));

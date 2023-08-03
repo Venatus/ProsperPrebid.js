@@ -710,6 +710,11 @@ pbjsInstance.addAdUnits = function (adUnitArr) {
   events.emit(ADD_AD_UNITS);
 };
 
+
+pbjsInstance.addBids = function (bids, adunit) {
+  auctionManager.addBids(bids, adunit);
+}
+
 /**
  * @param {string} event the name of the event
  * @param {Function} handler a callback to set on event

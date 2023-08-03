@@ -672,6 +672,10 @@ adapterManager.callBidderError = function(bidder, error, bidderRequest) {
   const param = { error, bidderRequest };
   tryCallBidderMethod(bidder, 'onBidderError', param);
 };
+adapterManager.callRestoreBidRenderer = function(bid, adunit) {  
+  const param = { bid, adunit };
+  tryCallBidderMethod(bid.bidderCode || bid.bidder || bid.adapterCode, 'restoreRenderer', param);
+};
 
 function resolveAlias(alias) {
   const seen = new Set();

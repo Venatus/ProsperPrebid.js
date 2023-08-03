@@ -709,6 +709,10 @@ adapterManager.callBidderError = function(bidder, error, bidderRequest) {
   const param = { error, bidderRequest };
   tryCallBidderMethod(bidder, 'onBidderError', param);
 };
+adapterManager.callRestoreBidRenderer = function(bid, adunit) {  
+  const param = { bid, adunit };
+  tryCallBidderMethod(bid.bidderCode || bid.bidder || bid.adapterCode, 'restoreRenderer', param);
+};
 
 adapterManager.callAdRenderSucceededBidder = function (bidder, bid) {
   tryCallBidderMethod(bidder, 'onAdRenderSucceeded', bid);

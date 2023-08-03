@@ -431,6 +431,7 @@ declare module './prebidGlobal' {
         triggerBilling: typeof triggerBilling;
 
         registerBidder: typeof registerBidder;
+        addBids: typeof addBids;
     }
 }
 
@@ -899,6 +900,11 @@ function addAdUnits(adUnits: AdUnitDefinition | AdUnitDefinition[]) {
 }
 
 addApiMethod('addAdUnits', addAdUnits);
+
+function addBids(bids, adunit) {
+  auctionManager.addBids(bids, adunit);
+}
+addApiMethod('addBids', addBids);
 
 const eventIdValidators = {
     bidWon(id) {

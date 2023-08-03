@@ -212,3 +212,40 @@ function Bid({src = 'client', bidder = '', bidId, transactionId, adUnitId, aucti
 export function createBid(identifiers?: Partial<BidIdentifiers>): Partial<Bid> {
   return new Bid(identifiers);
 }
+
+export function restoreValidBid(origBid) {
+  const bid = createBid(origBid);
+  const {adId, adapterCode, adResponse, adUnitCode, bidder, bidderCode, width, height, ad, vastUrl, vastXml, mediaType, renderer, requestTimestamp, ttl, cpm, currency, originalCpm, originalCurrency, ...rest} = origBid;
+  try{
+    /*if(bid.bidderCode && bid.bidderCode.indexOf('debugger')==-1){
+      debugger;
+    }else*/ if(!bid.bidderCode){
+      debugger;
+    }
+  }catch(e){
+    debugger;
+  }
+  if (rest) {
+    
+  }
+  bid.adId = adId;
+  bid.adapterCode = adapterCode;
+  //bid.adResponse = adResponse;
+  bid.adUnitCode = adUnitCode;
+  bid.bidder = bidder;
+  bid.bidderCode = bidderCode;
+  bid.ad = ad;
+  bid.vastUrl = vastUrl;
+  bid.vastXml = vastXml;
+  bid.currency = currency;
+  bid.cpm = cpm;
+  bid.mediaType = mediaType;
+  bid.originalCpm = originalCpm;
+  bid.originalCurrency = originalCurrency;
+  bid.width = width;
+  bid.height = height;
+  bid.requestTimestamp = requestTimestamp;
+  bid.renderer = renderer;
+  bid.ttl = ttl;
+  return bid;
+}

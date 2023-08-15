@@ -163,7 +163,7 @@ declare module './hook' {
 }
 
 export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, videoMediaType, context, useCacheKey) {
-  if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
+  if (videoMediaType && (useCacheKey || typeof(useCacheKey) === 'undefined'/*context !== OUTSTREAM*/)) {//allow instream video to not use the cache service
     // xml-only video bids require a prebid cache url
     const { url, useLocal } = config.getConfig('cache') || {};
     if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {

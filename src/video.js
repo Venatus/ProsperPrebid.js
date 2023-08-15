@@ -118,7 +118,7 @@ export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
 }
 
 export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaType, context, useCacheKey) {
-  if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
+  if (videoMediaType && (useCacheKey || typeof(useCacheKey) === 'undefined'/*context !== OUTSTREAM*/)) {//allow instream video to not use the cache service
     // xml-only video bids require a prebid cache url
     if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
       logError(`

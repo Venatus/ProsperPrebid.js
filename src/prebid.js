@@ -53,6 +53,7 @@ import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {fillVideoDefaults} from './video.js';
+import {registerBidder} from './adapters/bidderFactory.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -776,6 +777,11 @@ pbjsInstance.addAdUnits = function (adUnitArr) {
   events.emit(ADD_AD_UNITS);
 };
 
+
+pbjsInstance.addBids = function (bids, adunit) {
+  auctionManager.addBids(bids, adunit);
+}
+
 /**
  * @param {string} event the name of the event
  * @param {Function} handler a callback to set on event
@@ -1020,6 +1026,9 @@ const fetchReceivedBids = (bidRequest, warningMessage) => {
 
   return bids;
 };
+
+/** register a bidder */
+pbjsInstance.registerBidder = registerBidder;
 
 /**
  * Get Prebid config options

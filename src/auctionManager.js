@@ -21,10 +21,12 @@
 
 import { uniques, flatten, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
+import { restoreValidBid } from './bidfactory.js';
 import {find} from './polyfill.js';
 import {AuctionIndex} from './auctionIndex.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
+import adapterManager from './adapterManager.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -35,6 +37,7 @@ import {useMetrics} from './utils/perfMetrics.js';
 export function newAuctionManager() {
   const _auctions = [];
   const auctionManager = {};
+  let store = null;
 
   auctionManager.addWinningBid = function(bid) {
     const metrics = useMetrics(bid.metrics);
@@ -122,6 +125,28 @@ export function newAuctionManager() {
 
   auctionManager.clearAllAuctions = function() {
     _auctions.length = 0;
+  }
+
+  auctionManager.addBids = function(bids, adunit) {
+    if (!store) {
+      store = this.createAuction({
+        adUnits: [],
+        adUnitCodes: []
+      });
+    }
+
+    const bidsCopy = bids.map(bid => {
+      return restoreValidBid(bid);
+    });
+
+    bidsCopy.forEach((bid) =>
+    {
+      adapterManager.callRestoreBidRenderer(bid, adunit);
+    });
+
+    store.addBidReceived(bidsCopy); // TODO: remove duplicate bid.adId!
+
+    return store;
   }
 
   function _addAuction(auction) {

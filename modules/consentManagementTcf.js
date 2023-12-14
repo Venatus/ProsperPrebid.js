@@ -179,7 +179,7 @@ function processCmpData(consentObject, {onSuccess, onError}) {
     const tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
-      (gdprApplies === true && (!tcString || !isStr(tcString)))
+      (gdprApplies === true && (/*!tcString ||*/ !isStr(tcString)))
     );
   }
 

@@ -541,7 +541,7 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
           onSuccess(response.responseText, response);
         })
         .catch((error)=>{onFailure(error)});
-      break;          
+      break;
       default:
         logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
         requestDone();

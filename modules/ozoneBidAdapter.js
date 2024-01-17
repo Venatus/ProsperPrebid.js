@@ -386,7 +386,8 @@ export const spec = {
       'page': this.getRefererInfo().page,
       'id': htmlParams.siteId
     };
-    ozoneRequest.test = config.getConfig('debug') ? 1 : 0;
+    //TODO: make configurable debugable ads -enabled
+    //ozoneRequest.test = config.getConfig('debug') ? 1 : 0;
     if (bidderRequest && bidderRequest.gdprConsent) {
       logInfo('ADDING GDPR info');
       let apiVersion = deepAccess(bidderRequest, 'gdprConsent.apiVersion', 1);

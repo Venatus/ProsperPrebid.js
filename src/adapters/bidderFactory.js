@@ -534,14 +534,14 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
         break;
       case 'DIRECT':
         onSuccess(request.response.responseText, request.response);
-      break;
+        break;
       case 'PROMISE':
         request.promise
-        .then((response)=>{
-          onSuccess(response.responseText, response);
-        })
-        .catch((error)=>{onFailure(error)});
-      break;
+          .then((response) => {
+            onSuccess(response.responseText, response);
+          })
+          .catch((error) => { onFailure(error) });
+        break;
       default:
         logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
         requestDone();

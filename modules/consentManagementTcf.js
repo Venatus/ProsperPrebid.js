@@ -237,7 +237,11 @@ export function setConsentConfig(config) {
   }
 
   if (isNumber(config.timeout)) {
-    consentTimeout = config.timeout;
+    if (config.timeout < 0) {
+      consentTimeout = null;
+    } else {
+      consentTimeout = config.timeout;
+    }
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
     logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);

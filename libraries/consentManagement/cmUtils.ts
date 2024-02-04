@@ -185,7 +185,9 @@ export function configParser(
       logInfo(msg(`config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`));
     }
     let cmpTimeout;
-    if (isNumber(cmConfig.timeout)) {
+    /*if (cmConfig.timeout < 0) {
+      cmpTimeout = null;
+    } else*/ if (isNumber(cmConfig.timeout)) {
       cmpTimeout = cmConfig.timeout;
     } else {
       cmpTimeout = DEFAULT_CONSENT_TIMEOUT;

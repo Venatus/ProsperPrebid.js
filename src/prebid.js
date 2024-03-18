@@ -52,6 +52,7 @@ import { ORTB_BANNER_PARAMS } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
 import { newBidder } from './adapters/bidderFactory.js';
 import {registerBidder} from './adapters/bidderFactory.js';
+import { dep } from './ajax.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -1054,5 +1055,9 @@ pbjsInstance.triggerBilling = ({adId, adUnitCode}) => {
       renderIfDeferred(bid);
     });
 };
+
+pbjsInstance.setFetchMethod = (method) => {
+  dep.fetch = method;
+}
 
 export default pbjsInstance;

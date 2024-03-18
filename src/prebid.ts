@@ -67,6 +67,7 @@ import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
 import {registerBidder} from './adapters/bidderFactory.js';
+import { dep } from './ajax.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -433,6 +434,7 @@ declare module './prebidGlobal' {
         registerBidder: typeof registerBidder;
         addBids: typeof addBids;
         getAllReceivedBids: typeof auctionManager.getAllReceivedBids;
+        setFetchMethod: (method: (url: string, options?: RequestInit) => Promise<Response>) => void;
     }
 }
 
@@ -1207,5 +1209,9 @@ function triggerBilling({adId, adUnitCode}: {
         });
 }
 addApiMethod('triggerBilling', triggerBilling);
+
+pbjsInstance.setFetchMethod = (method) => {
+  dep.fetch = method;
+}
 
 export default pbjsInstance;

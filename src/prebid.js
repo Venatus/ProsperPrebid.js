@@ -43,6 +43,7 @@ import {insertLocatorFrame, renderAdDirect} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 import {registerBidder} from './adapters/bidderFactory.js';
+import { dep } from './ajax.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -1013,5 +1014,9 @@ pbjsInstance.triggerBilling = (winningBid) => {
     logWarn('The bid provided to triggerBilling did not match any bids received.');
   }
 };
+
+pbjsInstance.setFetchMethod = (method) => {
+  dep.fetch = method;
+}
 
 export default pbjsInstance;

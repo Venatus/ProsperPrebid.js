@@ -49,6 +49,7 @@ import {
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 import {registerBidder} from './adapters/bidderFactory.js';
+import { dep } from './ajax.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -1029,5 +1030,9 @@ pbjsInstance.triggerBilling = ({adId, adUnitCode}) => {
       renderIfDeferred(bid);
     });
 };
+
+pbjsInstance.setFetchMethod = (method) => {
+  dep.fetch = method;
+}
 
 export default pbjsInstance;

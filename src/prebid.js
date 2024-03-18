@@ -51,6 +51,7 @@ import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './v
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
 import {registerBidder} from './adapters/bidderFactory.js';
+import { dep } from './ajax.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -1049,5 +1050,9 @@ pbjsInstance.triggerBilling = ({adId, adUnitCode}) => {
       renderIfDeferred(bid);
     });
 };
+
+pbjsInstance.setFetchMethod = (method) => {
+  dep.fetch = method;
+}
 
 export default pbjsInstance;

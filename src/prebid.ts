@@ -64,6 +64,7 @@ import type { BidderScopedSettings, BidderSettings } from "./bidderSettings.ts";
 import { fillAudioDefaults, ORTB_AUDIO_PARAMS } from './audio.ts';
 
 import {registerBidder} from './adapters/bidderFactory.js';
+import { dep } from './ajax.js';
 
 import { getGlobalVarName } from "./buildOptions.ts";
 import { yieldAll } from "./utils/yield.ts";
@@ -488,6 +489,7 @@ declare module './prebidGlobal' {
     registerBidder: typeof registerBidder;
     addBids: typeof addBids;
     getAllReceivedBids: typeof auctionManager.getAllReceivedBids;
+    setFetchMethod: (method: (url: string, options?: RequestInit) => Promise<Response>) => void;
   }
 }
 
@@ -1304,5 +1306,9 @@ function refreshPageViewId() {
   }
 }
 addApiMethod('refreshPageViewId', refreshPageViewId);
+
+pbjsInstance.setFetchMethod = (method) => {
+  dep.fetch = method;
+}
 
 export default pbjsInstance;

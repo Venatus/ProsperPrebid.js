@@ -57,12 +57,18 @@ export function newAuctionManager() {
     }
   }
 
+  function getAuctionByBid(bid) {
+    for (const auction of _auctions.toArray()) {
+      if (auction.getBidsReceived().find(b=>b.adId === bid.adId && b.adUnitCode === bid.adUnitCode && b.bidderCode === bid.bidderCode && b.auctionId === bid.auctionId)) return auction;
+    }
+  }
+
   auctionManager.addWinningBid = function(bid) {
     const metrics = useMetrics(bid.metrics);
     metrics.checkpoint('bidWon');
     metrics.timeBetween('auctionEnd', 'bidWon', 'adserver.pending');
     metrics.timeBetween('requestBids', 'bidWon', 'adserver.e2e');
-    const auction = getAuction(bid.auctionId);
+    const auction = getAuction(bid.auctionId) ?? getAuctionByBid(bid);
     if (auction) {
       auction.addWinningBid(bid);
     } else {

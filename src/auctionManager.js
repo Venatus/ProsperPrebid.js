@@ -23,7 +23,7 @@
  * @property {function(): void} clearAllAuctions - clear all auctions for testing
  * @property {function(*): *} onExpiry
  * @property {AuctionIndex} index
- * @property {function(Array, string): void} addBids - clear all auctions for testing
+ * @property {function(Array, string, boolean): void} addBids - add bids to an auction
  */
 
 import { uniques, logWarn } from './utils.js';
@@ -154,7 +154,7 @@ export function newAuctionManager() {
     _auctions.clear();
   }
 
-  auctionManager.addBids = function(bids, adunit) {
+  auctionManager.addBids = function(bids, adunit, asReference=false) {
     if (!store) {
       store = this.createAuction({
         adUnits: [],
@@ -162,7 +162,7 @@ export function newAuctionManager() {
       });
     }
 
-    const bidsCopy = bids.map(bid => {
+    const bidsCopy = asReference ? bids : bids.map(bid => {
       return restoreValidBid(bid);
     });
 

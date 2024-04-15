@@ -903,8 +903,8 @@ function addAdUnits(adUnits: AdUnitDefinition | AdUnitDefinition[]) {
 
 addApiMethod('addAdUnits', addAdUnits);
 
-function addBids(bids, adunit) {
-  auctionManager.addBids(bids, adunit);
+function addBids(bids, adunit, asReference=false) {
+  auctionManager.addBids(bids, adunit, asReference);
 }
 addApiMethod('addBids', addBids);
 

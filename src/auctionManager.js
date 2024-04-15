@@ -148,7 +148,7 @@ export function newAuctionManager() {
     _auctions.clear();
   }
 
-  auctionManager.addBids = function(bids, adunit) {
+  auctionManager.addBids = function(bids, adunit, asReference=false) {
     if (!store) {
       store = this.createAuction({
         adUnits: [],
@@ -156,7 +156,7 @@ export function newAuctionManager() {
       });
     }
 
-    const bidsCopy = bids.map(bid => {
+    const bidsCopy = asReference ? bids : bids.map(bid => {
       return restoreValidBid(bid);
     });
 

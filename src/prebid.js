@@ -713,8 +713,8 @@ pbjsInstance.addAdUnits = function (adUnitArr) {
 };
 
 
-pbjsInstance.addBids = function (bids, adunit) {
-  auctionManager.addBids(bids, adunit);
+pbjsInstance.addBids = function (bids, adunit, asReference=false) {
+  auctionManager.addBids(bids, adunit, asReference);
 }
 
 /**

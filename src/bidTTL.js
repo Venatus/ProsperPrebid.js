@@ -1,5 +1,5 @@
 import {config} from './config.js';
-import {logError} from './utils.js';
+import {isNumber, logError} from './utils.js';
 const CACHE_TTL_SETTING = 'minBidCacheTTL';
 let TTL_BUFFER = 1;
 let minCacheTTL = null;
@@ -14,7 +14,7 @@ config.getConfig('ttlBuffer', (cfg) => {
 })
 
 export function getBufferedTTL(bid) {
-  return bid.ttl - (bid.hasOwnProperty('ttlBuffer') ? bid.ttlBuffer : TTL_BUFFER);
+  return bid.ttl - (bid.hasOwnProperty('ttlBuffer') || isNumber(bid.ttlBuffer) ? bid.ttlBuffer : TTL_BUFFER);
 }
 
 export function getMinBidCacheTTL() {

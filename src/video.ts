@@ -180,7 +180,7 @@ export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, v
 
   // outstream bids require a renderer on the bid or pub-defined on adunit
   if (context === OUTSTREAM && !useCacheKey) {
-    return !!(bid.renderer || (adUnit && adUnit.renderer) || videoMediaType.renderer);
+    return videoMediaType.requireRenderer === false || !!(bid.renderer || (adUnit && adUnit.renderer) || videoMediaType.renderer);
   }
 
   return true;

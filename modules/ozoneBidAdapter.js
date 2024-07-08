@@ -414,7 +414,7 @@ export const spec = {
       logInfo('going to batch the requests');
       let arrRet = []; // return an array of objects containing data describing max 10 bids
       for (let i = 0; i < tosendtags.length; i += batchRequestsVal) {
-        if (bidderRequest.auctionId) {
+        if (bidderRequest.auctionId && false) {
           logInfo('Found bidderRequest.auctionId - will pass these values through & not generate our own id');
           ozoneRequest.id = bidderRequest.auctionId;
           ozoneRequest.auctionId = bidderRequest.auctionId;
@@ -441,7 +441,7 @@ export const spec = {
     logInfo('requests will not be batched.');
     if (singleRequest) {
       logInfo('buildRequests starting to generate response for a single request');
-      if (bidderRequest.auctionId) {
+      if (bidderRequest.auctionId && false) {
         logInfo('Found bidderRequest.auctionId - will pass these values through & not generate our own id');
         ozoneRequest.id = bidderRequest.auctionId;
         ozoneRequest.auctionId = bidderRequest.auctionId;

@@ -41,6 +41,9 @@ const getUserSyncs = createUserSyncGetter({
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: [
+    {code: 'kueezRtb'},
+  ],
   version: BIDDER_VERSION,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],

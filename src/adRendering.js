@@ -22,7 +22,7 @@ import {useMetrics} from './utils/perfMetrics.js';
 import {filters} from './targeting.js';
 import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 
-const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
+const { BEFORE_AD_RENDER, AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
 export const getBidToRender = hook('sync', function (adId, forRender = true, override = GreedyPromise.resolve()) {
@@ -162,6 +162,7 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const {bidResponse, doc} = args;
+  events.emit(BEFORE_AD_RENDER, bidResponse, doc);
   if (isRendererRequired(bidResponse.renderer)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({doc, bid: bidResponse, id: bidResponse.adId})

@@ -798,6 +798,9 @@ export const spec = {
           logWarn(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting mediatype Video of bid: `, bid);
           return true;
         }
+        if(videoMediaTypes.hasOwnProperty('fallbackRenderer')){
+          return true;
+        }
         logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
         return false;
       }

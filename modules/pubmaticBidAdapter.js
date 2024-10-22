@@ -1112,7 +1112,7 @@ export const spec = {
         if (bid.mediaTypes[VIDEO].context === 'outstream' &&
           !isStr(bid.params.outstreamAU) &&
           !bid.hasOwnProperty('renderer') &&
-          !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
+          !(bid.mediaTypes[VIDEO].hasOwnProperty('renderer') || bid.mediaTypes[VIDEO].hasOwnProperty('fallbackRenderer'))) {
           // we are here since outstream ad-unit is provided without outstreamAU and renderer
           // so it is not a valid video ad-unit
           // but it may be valid banner or native ad-unit

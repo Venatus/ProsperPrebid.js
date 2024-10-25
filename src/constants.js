@@ -29,6 +29,7 @@ export const EVENTS = {
   BID_WON: 'bidWon',
   BIDDER_DONE: 'bidderDone',
   BIDDER_ERROR: 'bidderError',
+  BIDDER_INVALID_REQUEST: 'bidderRequestInvalid',
   SET_TARGETING: 'setTargeting',
   BEFORE_REQUEST_BIDS: 'beforeRequestBids',
   BEFORE_BIDDER_HTTP: 'beforeBidderHttp',

@@ -109,6 +109,10 @@ export function newAuctionManager() {
     return _auctions.toArray().flatMap(au => au.getBidsReceived())
   }
 
+  auctionManager.getAllReceivedBids = function() {
+    return allBidsReceived();
+  };
+
   auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
     return allBidsReceived()
       .filter(bid => bid && bid.adUnitCode === adUnitCode)

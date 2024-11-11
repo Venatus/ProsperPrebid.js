@@ -434,6 +434,7 @@ declare module './prebidGlobal' {
         registerBidder: typeof registerBidder;
         addBids: typeof addBids;
         setFetchMethod: (method: (url: string, options?: RequestInit) => Promise<Response>) => void;
+        getAllReceivedBids: typeof auctionManager.getAllReceivedBids;
     }
 }
 
@@ -907,6 +908,10 @@ function addBids(bids, adunit, asReference=false) {
   auctionManager.addBids(bids, adunit, asReference);
 }
 addApiMethod('addBids', addBids);
+
+pbjsInstance.getAllReceivedBids = function () {
+  return auctionManager.getAllReceivedBids();
+}
 
 const eventIdValidators = {
     bidWon(id) {

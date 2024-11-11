@@ -24,6 +24,7 @@
  * @property {function(*): *} onExpiry
  * @property {AuctionIndex} index
  * @property {function(Array, string, boolean): void} addBids - add bids to an auction
+ * @property {function(): Array} getAllReceivedBids - get all received auctions
  */
 
 import { uniques, logWarn } from './utils.js';
@@ -114,6 +115,10 @@ export function newAuctionManager() {
   function allBidsReceived() {
     return _auctions.toArray().flatMap(au => au.getBidsReceived())
   }
+
+  auctionManager.getAllReceivedBids = function() {
+    return allBidsReceived();
+  };
 
   auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
     return allBidsReceived()

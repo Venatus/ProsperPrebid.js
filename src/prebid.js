@@ -715,6 +715,9 @@ pbjsInstance.addAdUnits = function (adUnitArr) {
 pbjsInstance.addBids = function (bids, adunit, asReference=false) {
   auctionManager.addBids(bids, adunit, asReference);
 }
+pbjsInstance.getAllReceivedBids = function () {
+  return auctionManager.getAllReceivedBids();
+}
 
 /**
  * @param {string} event the name of the event

@@ -190,7 +190,8 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
     adUrl: replaceMacros(adUrl, repl),
     width,
     height,
-    instl
+    instl,
+    setDimensionsAsStyle:options?.setDimensionsAsStyle,
   };
 })
 
@@ -207,9 +208,9 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
   }
   const data = getRenderingData(bidResponse, options);
   renderFn(Object.assign({adId: bidResponse.adId}, data));
-  const {width, height} = data;
+  const {width, height, setDimensionsAsStyle} = data;
   if ((width ?? height) != null) {
-    resizeFn(width, height);
+    resizeFn(width, height, setDimensionsAsStyle);
   }
 });
 
@@ -310,7 +311,7 @@ export function renderAdDirect(doc, adId, options) {
   function fail(reason, message) {
     emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
   }
-  function resizeFn(width, height) {
+  function resizeFn(width, height, setDimensionsAsStyle) {
     const frame = doc.defaultView?.frameElement;
     if (frame) {
       if (width) {
@@ -321,6 +322,8 @@ export function renderAdDirect(doc, adId, options) {
         frame.height = height;
         frame.style.height && (frame.style.height = `${height}px`);
       }
+      setDimensionsAsStyle && width && (frame.style.width = width+'px');
+      setDimensionsAsStyle && height && (frame.style.height = height+'px');
     }
   }
   const messageHandler = creativeMessageHandler({resizeFn});
@@ -353,7 +356,7 @@ export function renderAdDirect(doc, adId, options) {
     } else {
       getBidToRender(adId).then(bidResponse => {
         bid = bidResponse;
-        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
+        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough, setDimensionsAsStyle:options?.setDimensionsAsStyle}, bidResponse, doc});
       });
     }
   } catch (e) {

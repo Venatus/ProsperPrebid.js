@@ -169,7 +169,15 @@ export function newAuctionManager() {
       adapterManager.callRestoreBidRenderer(bid, adunit);
     });
 
-    store.addBidReceived(bidsCopy); // TODO: remove duplicate bid.adId!
+    const bidIds = {};
+    bidsCopy.forEach(bidCopy => {
+      if (bidIds[bidCopy.adId]) {
+        logWarn(`Duplicate adId ignored: ${bidCopy.adId}`);
+      } else {
+        bidIds[bidCopy.adId] = true;
+        store.addBidReceived(bidCopy);
+      }
+    });
 
     return store;
   }

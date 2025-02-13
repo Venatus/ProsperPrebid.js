@@ -177,10 +177,11 @@ function creativeMessageHandler(deps) {
 
 type RenderOptions = {
     clickUrl?: string;
+    setDimensionsAsStyle?: boolean;
 }
 
-export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const {ad, adUrl, cpm, originalCpm, width, height, instl} = bidResponse
+export const getRenderingData = hook('sync', function (bidResponse: Bid & {adjWidth:number, adjHeight:number}, options?: RenderOptions): Record<string, any> {
+  const {ad, adUrl, cpm, originalCpm, width, height, adjWidth, adjHeight, instl} = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -188,8 +189,8 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
   return {
     ad: replaceMacros(ad, repl),
     adUrl: replaceMacros(adUrl, repl),
-    width,
-    height,
+    width: adjWidth ?? width,
+    height: adjHeight ?? height,
     instl,
     setDimensionsAsStyle:options?.setDimensionsAsStyle,
   };

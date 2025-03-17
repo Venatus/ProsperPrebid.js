@@ -120,6 +120,7 @@ function initLsValues() {
     iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = iiqArr[0].params.manualWinReportEnabled || false;
     iiqAnalyticsAnalyticsAdapter.initOptions.domainName = iiqArr[0].params.domainName || '';
+	iiqAnalyticsAnalyticsAdapter.initOptions.collectAdUnitCodes = iiqArr[0].params?.collectAdUnitCodes || false;
   }
 }
 
@@ -250,7 +251,9 @@ function prepareData (data, result) {
   if (data.auctionId) {
     result.prebidAuctionId = data.auctionId;
   }
-  if (data.placementId) {
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.collectAdUnitCodes) {
+    result.placementId = data.adUnitCode;
+  } else if (data.placementId) {
     result.placementId = data.placementId;
   } else {
     // Simplified placementId determination

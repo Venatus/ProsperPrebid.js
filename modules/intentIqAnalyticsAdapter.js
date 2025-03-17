@@ -107,6 +107,7 @@ function initLsValues() {
       typeof iiqConfig.params?.browserBlackList === 'string' ? iiqConfig.params.browserBlackList.toLowerCase() : '';
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = iiqConfig.params?.manualWinReportEnabled || false;
     iiqAnalyticsAnalyticsAdapter.initOptions.domainName = iiqConfig.params?.domainName || '';
+    iiqAnalyticsAnalyticsAdapter.initOptions.collectAdUnitCodes = iiqConfig.params?.collectAdUnitCodes || false;
   } else {
     iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = false;
     iiqAnalyticsAnalyticsAdapter.initOptions.partner = -1;
@@ -235,7 +236,10 @@ function prepareData (data, result) {
   if (data.auctionId) {
     result.prebidAuctionId = data.auctionId;
   }
-  if (data.placementId) {
+
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.collectAdUnitCodes) {
+    result.placementId = data.adUnitCode;
+  } else if (data.placementId) {
     result.placementId = data.placementId;
   } else {
     // Simplified placementId determination

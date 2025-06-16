@@ -81,7 +81,7 @@ const converter = ortbConverter({
     if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot);
     if (imp.hasOwnProperty('video')) updateVideoImp(mediaTypes?.video, adUnitCode, imp);
     if (imp.hasOwnProperty('native')) updateNativeImp(imp, mediaTypes?.native);
-    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, adUnitCode, bidRequest?.sizes);
+    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, adUnitCode, bidRequest?.sizes, bidRequest);
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
     setImpFields(imp);
@@ -670,7 +670,7 @@ function _getMinSize(sizes) {
  * @param {string} adUnitCode - The ad unit code for element identification
  * @param {Object} sizes - Sizes object with width and height properties
  */
-export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
+export const addViewabilityToImp = (imp, adUnitCode, sizes, bidRequest) => {
   let elementSize = { w: 0, h: 0 };
 
   if (imp.video?.w > 0 && imp.video?.h > 0) {
@@ -679,12 +679,18 @@ export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
   } else {
     elementSize = _getMinSize(sizes);
   }
+  const hasVisibilityParam = bidRequest?.params?.__int_v__ >= 0;
   const element = document.getElementById(adUnitCode);
-  if (!element) return;
+  if (!element && !hasVisibilityParam) return;
 
-  const viewabilityAmount = isViewabilityMeasurable(element)
+  const viewabilityAmount = (() => {
+    const amount = isViewabilityMeasurable(element)
     ? getViewability(element, getWindowTop(), elementSize)
     : 'na';
+    if (amount === 'na' && hasVisibilityParam) {
+      return Math.round(bidRequest.params.__int_v__ * 100);
+    }
+  })();
 
   if (!imp.ext) {
     imp.ext = {};

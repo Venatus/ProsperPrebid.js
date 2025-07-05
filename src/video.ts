@@ -127,7 +127,7 @@ export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } 
 
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
-  if (useCacheKey || context !== OUTSTREAM) {
+  if (useCacheKey /*|| context !== OUTSTREAM*/) {//allow instream video to not use the cache service
     // xml-only video bids require a prebid cache url
     const { url, useLocal, allowVastXmlOnly } = config.getConfig('cache') || {};
     if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl && videoMediaType.cache !== false) {
@@ -144,7 +144,7 @@ export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } 
     }
   }
 
-  if (videoBidRequiresRenderer(videoMediaType, adUnit)) {
+  if (!(videoMediaType.requireRenderer === false) && videoBidRequiresRenderer(videoMediaType, adUnit)) {
     // outstream bids, by default, require a renderer on the bid or pub-defined on adunit
     const bidRequest = index.getBidRequest(bid);
     return (

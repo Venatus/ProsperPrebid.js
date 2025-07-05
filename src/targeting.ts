@@ -38,6 +38,28 @@ export const TARGETING_KEYS_ARR = Object.keys(TARGETING_KEYS).map(
   key => TARGETING_KEYS[key]
 );
 
+// return unexpired bids
+const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 1000) > timestamp();
+
+// return bids whose status is not set. Winning bids can only have a status of `rendered`.
+const isUnusedBid = (bid) => bid && ((bid.status && ![BID_STATUS.RENDERED].includes(bid.status)) || !bid.status);
+
+const isBidNotLocked = (bid) => !lock.isLocked(bid.adserverTargeting);
+
+const bidTTL = (bid)=>{
+  return ((bid.responseTimestamp + (bid.ttl - (bid.hasOwnProperty('ttlBuffer') ? bid.ttlBuffer : DEFAULT_TTL_BUFFER)) * 1000) - timestamp());
+};
+
+export const filters = {
+  isBidNotExpired,
+  isUnusedBid,
+  isBidNotLocked
+};
+
+export let functions = {
+  bidTTL:bidTTL,
+}
+
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
 // If adUnitBidLimit is set above 0 return top N number of bids

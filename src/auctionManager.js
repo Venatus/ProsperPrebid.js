@@ -24,15 +24,19 @@
  * @property {function(): Array} getAuctions - returns tracked auction instances
  * @property {function(*): *} onExpiry
  * @property {AuctionIndex} index
+ * @property {function(Array, string, boolean): void} addBids - add bids to an auction
+ * @property {function(): Array} getAllReceivedBids - get all received auctions
  */
 
 import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
 import { AuctionIndex } from './auctionIndex.js';
+import { restoreValidBid } from './bidfactory.js';
 import { BID_STATUS, JSON_MAPPING } from './constants.js';
 import { useMetrics } from './utils/perfMetrics.js';
 import { ttlCollection } from './utils/ttlCollection.js';
 import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
+import adapterManager from './adapterManager';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -64,10 +68,17 @@ export function newAuctionManager() {
   const auctionManager = {
     onExpiry: _auctions.onExpiry
   };
+  let store = null;
 
   function getAuction(auctionId) {
     for (const auction of _auctions) {
       if (auction.getAuctionId() === auctionId) return auction;
+    }
+  }
+
+  function getAuctionByBid(bid) {
+    for (const auction of _auctions.toArray()) {
+      if (auction.getBidsReceived().find(b=>b.adId === bid.adId && b.adUnitCode === bid.adUnitCode && b.bidderCode === bid.bidderCode && b.auctionId === bid.auctionId)) return auction;
     }
   }
 
@@ -76,7 +87,7 @@ export function newAuctionManager() {
     metrics.checkpoint('bidWon');
     metrics.timeBetween('auctionEnd', 'bidWon', 'adserver.pending');
     metrics.timeBetween('requestBids', 'bidWon', 'adserver.e2e');
-    const auction = getAuction(bid.auctionId);
+    const auction = getAuction(bid.auctionId) ?? getAuctionByBid(bid);
     if (auction) {
       auction.addWinningBid(bid);
     } else {
@@ -116,6 +127,10 @@ export function newAuctionManager() {
   function allBidsReceived() {
     return _auctions.toArray().flatMap(au => au.getBidsReceived());
   }
+
+  auctionManager.getAllReceivedBids = function() {
+    return allBidsReceived();
+  };
 
   auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
     return allBidsReceived()
@@ -160,8 +175,38 @@ export function newAuctionManager() {
   };
 
   auctionManager.getAuctions = function() {
-    return _auctions.toArray();
+    if (!store) {
   };
+  
+  auctionManager.addBids = function(bids, adunit, asReference=false) {
+    if (!store) {
+      store = this.createAuction({
+        adUnits: [],
+        adUnitCodes: []
+      });
+    }
+
+    const bidsCopy = asReference ? bids : bids.map(bid => {
+      return restoreValidBid(bid);
+    });
+
+    bidsCopy.forEach((bid) =>
+    {
+      adapterManager.callRestoreBidRenderer(bid, adunit);
+    });
+
+    const bidIds = {};
+    bidsCopy.forEach(bidCopy => {
+      if (bidIds[bidCopy.adId]) {
+        logWarn(`Duplicate adId ignored: ${bidCopy.adId}`);
+      } else {
+        bidIds[bidCopy.adId] = true;
+        store.addBidReceived(bidCopy);
+      }
+    });
+
+    return store;
+  }
 
   function _addAuction(auction) {
     _auctions.add(auction);

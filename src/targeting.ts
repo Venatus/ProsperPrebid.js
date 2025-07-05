@@ -48,11 +48,19 @@ const isUnusedBid = (bid) => bid && ((bid.status && ![BID_STATUS.RENDERED].inclu
 
 const isBidNotLocked = (bid) => !lock.isLocked(bid.adserverTargeting);
 
+const bidTTL = (bid)=>{
+  return ((bid.responseTimestamp + (bid.ttl - (bid.hasOwnProperty('ttlBuffer') ? bid.ttlBuffer : DEFAULT_TTL_BUFFER)) * 1000) - timestamp());
+};
+
 export const filters = {
   isBidNotExpired,
   isUnusedBid,
   isBidNotLocked
 };
+
+export let functions = {
+  bidTTL:bidTTL,
+}
 
 export function isBidUsable(bid) {
   return !Object.values(filters).some((predicate) => !predicate(bid));

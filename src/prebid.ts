@@ -489,6 +489,8 @@ declare module './prebidGlobal' {
     refreshPageViewId: typeof refreshPageViewId;
 
     registerBidder: typeof registerBidder;
+    addBids: typeof addBids;
+    getAllReceivedBids: typeof auctionManager.getAllReceivedBids;
   }
 }
 
@@ -982,6 +984,15 @@ function addAdUnits<const B extends BidderCode>(adUnits: AdUnitDefinition<B> | A
 }
 
 addApiMethod('addAdUnits', addAdUnits);
+
+function addBids(bids, adunit, asReference=false) {
+  auctionManager.addBids(bids, adunit, asReference);
+}
+addApiMethod('addBids', addBids);
+
+pbjsInstance.getAllReceivedBids = function () {
+  return auctionManager.getAllReceivedBids();
+}
 
 const eventIdValidators = {
   bidWon(id) {

@@ -104,8 +104,12 @@ const TIDS = {
 export interface AdapterRequest {
   url: string;
   data: any;
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'DIRECT' | 'PROMISE';
   options?: Omit<AjaxOptions, 'method'> & { endpointCompression?: boolean };
+    response?: {
+      responseText?: string;
+    };
+    promise?: Promise<{responseText: string, getResponseHeader: (hdr:any)=>any}>;
 }
 
 export interface ServerResponse {
@@ -381,6 +385,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   function filterAndWarn(bid) {
     if (!spec.isBidRequestValid(bid)) {
       logWarn(`Invalid bid sent to bidder ${spec.code}: ${JSON.stringify(bid)}`);
+      events.emit(EVENTS.BIDDER_INVALID_REQUEST, bid);
       return false;
     }
     return true;
@@ -573,6 +578,16 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
         } else {
           callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
         }
+        break;
+      case 'DIRECT':
+        onSuccess(request.response.responseText, request.response);
+        break;
+      case 'PROMISE':
+        request.promise
+          .then((response) => {
+            onSuccess(response.responseText, response);
+          })
+          .catch((error) => { onFailure(error, null) });
         break;
       default:
         logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.method} must be GET or POST`);

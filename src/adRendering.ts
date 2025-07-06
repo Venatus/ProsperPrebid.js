@@ -26,7 +26,7 @@ import type { SafeRendererConfig } from "./adUnits.ts";
 import { yieldsIf } from "./utils/yield.ts";
 import { PbPromise } from "./utils/promise.ts";
 
-const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
+const { BEFORE_AD_RENDER, AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
 declare module './events' {
@@ -201,20 +201,22 @@ function creativeMessageHandler(deps) {
 type RenderOptions = {
   clickUrl?: string;
   viewUrl?: string;
+  setDimensionsAsStyle?: boolean;
 };
 
-export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const { ad, adUrl, width, height, instl } = prepareBidForRendering(bidResponse, options);
+export const getRenderingData = hook('sync', function (bidResponse: Bid & {adjWidth?:number, adjHeight?:number}, options?: RenderOptions): Record<string, any> {
+  const { ad, adUrl, width, height, adjWidth, adjHeight, instl } = prepareBidForRendering(bidResponse, options);
   return {
     ad,
     adUrl,
-    width,
-    height,
+    width: adjWidth ?? width,
+    height: adjHeight ?? height,
     instl,
+    setDimensionsAsStyle: options?.setDimensionsAsStyle,
   };
 });
 
-function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid {
+function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid & {adjWidth?:number, adjHeight?:number} {
   const { ad, adUrl, cpm, originalCpm, safeRenderer } = bidResponse;
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
@@ -283,15 +285,16 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
   }
   const data = prepareRenderingData(bidResponse, options, safeRenderer);
   renderFn(Object.assign({ adId: bidResponse.adId }, data));
-  const { width, height } = data;
+  const { width, height, setDimensionsAsStyle } = data;
   if ((width ?? height) != null) {
-    resizeFn(width, height);
+    resizeFn(width, height, setDimensionsAsStyle);
   }
 });
 
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
+  events.emit(BEFORE_AD_RENDER, bidResponse, doc);
   if (isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId });
@@ -393,7 +396,7 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
   function fail(reason, message) {
     emitAdRenderFail(Object.assign({ id: adId, bid }, { reason, message }));
   }
-  function resizeFn(width, height) {
+  function resizeFn(width, height, setDimensionsAsStyle) {
     const frame = doc.defaultView?.frameElement;
     if (frame) {
       if (width) {
@@ -404,6 +407,8 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
         frame.height = height;
         frame.style.height && (frame.style.height = `${height}px`);
       }
+      setDimensionsAsStyle && width && (frame.style.width = width+'px');
+      setDimensionsAsStyle && height && (frame.style.height = height+'px');
     }
   }
   const messageHandler = creativeMessageHandler({ resizeFn });
@@ -448,7 +453,7 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
       bid = auctionManager.findBidByAdId(adId);
-      handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
+      handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl, setDimensionsAsStyle:options?.setDimensionsAsStyle }, bidResponse: bid, doc });
     }
   } catch (e) {
     fail(EXCEPTION, e.message);

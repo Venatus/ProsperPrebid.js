@@ -34,6 +34,7 @@ export const EVENTS = {
   BEFORE_REQUEST_BIDS: 'beforeRequestBids',
   BEFORE_BIDDER_HTTP: 'beforeBidderHttp',
   REQUEST_BIDS: 'requestBids',
+  BEFORE_AD_RENDER: 'adRenderBefore',
   AD_RENDER_FAILED: 'adRenderFailed',
   AD_RENDER_SUCCEEDED: 'adRenderSucceeded',
   TCF2_ENFORCEMENT: 'tcf2Enforcement',

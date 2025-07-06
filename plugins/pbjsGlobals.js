@@ -26,6 +26,9 @@ module.exports = function(api, options) {
   function relPath(from, toRelToProjectRoot) {
     return path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)).replace(SEP_PAT, '/');
   }
+  function absPath(from, toRelToProjectRoot) {
+    return path.join(path.dirname(from), toRelToProjectRoot).replace(SEP_PAT, '/');
+  }
 
   function getModuleName(filename) {
     const modPath = path.parse(path.relative(PREBID_ROOT, filename));
@@ -61,6 +64,10 @@ module.exports = function(api, options) {
       ImportDeclaration(path, state) {
         if (path.node.source.value.endsWith('.ts')) {
           path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
+        }
+        if (path.node.source.value.endsWith('.js') && (path.node.source.value.startsWith('./') || path.node.source.value.startsWith('../'))) {
+          path.node.source.value = absPath(state.filename, path.node.source.value.replace(/\.js$/, ''));//TODO: figure out the path resolution logic
+          //console.log('new path:',path.node.source.value);
         }
       },
       StringLiteral(path) {

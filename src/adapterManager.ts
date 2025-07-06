@@ -41,7 +41,7 @@ import {
     incrementRequestsCounter
 } from './adUnits.js';
 import {getRefererInfo, type RefererInfo} from './refererDetection.js';
-import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler,} from './consentHandler.js';
+import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler,} from './consentHandler';
 import * as events from './events.js';
 import {EVENTS, S2S} from './constants.js';
 import {type Metrics, useMetrics} from './utils/perfMetrics.js';
@@ -68,7 +68,7 @@ import type {
     AnalyticsProvider, AnalyticsProviderConfig,
 } from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 
-export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler.js';
+export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler';
 
 export const PBS_ADAPTER_NAME = 'pbsBidAdapter';
 export const PARTITIONS = {

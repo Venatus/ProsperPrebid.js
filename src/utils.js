@@ -3,11 +3,11 @@ import {config} from './config.js';
 import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
 import { default as deepAccess } from 'dlv/index.js';
-import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
+import {isArray, isFn, isStr, isPlainObject} from './utils/objects';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
-export * from './utils/objects.js'
+export * from './utils/objects'
 
 let consoleExists = Boolean(window.console);
 let consoleLogExists = Boolean(consoleExists && window.console.log);

@@ -24,7 +24,7 @@ import {filters} from './targeting.js';
 import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 import type {Bid} from "./bidfactory.ts";
 
-const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
+const { BEFORE_AD_RENDER, AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
 declare module './events' {
@@ -177,10 +177,11 @@ function creativeMessageHandler(deps) {
 
 type RenderOptions = {
     clickUrl?: string;
+    setDimensionsAsStyle?: boolean;
 }
 
-export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const {ad, adUrl, cpm, originalCpm, width, height, instl} = bidResponse
+export const getRenderingData = hook('sync', function (bidResponse: Bid & {adjWidth:number, adjHeight:number}, options?: RenderOptions): Record<string, any> {
+  const {ad, adUrl, cpm, originalCpm, width, height, adjWidth, adjHeight, instl} = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -188,9 +189,10 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
   return {
     ad: replaceMacros(ad, repl),
     adUrl: replaceMacros(adUrl, repl),
-    width,
-    height,
-    instl
+    width: adjWidth ?? width,
+    height: adjHeight ?? height,
+    instl,
+    setDimensionsAsStyle:options?.setDimensionsAsStyle,
   };
 })
 
@@ -207,15 +209,16 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
   }
   const data = getRenderingData(bidResponse, options);
   renderFn(Object.assign({adId: bidResponse.adId}, data));
-  const {width, height} = data;
+  const {width, height, setDimensionsAsStyle} = data;
   if ((width ?? height) != null) {
-    resizeFn(width, height);
+    resizeFn(width, height, setDimensionsAsStyle);
   }
 });
 
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const {bidResponse, doc} = args;
+  events.emit(BEFORE_AD_RENDER, bidResponse, doc);
   if (isRendererRequired(bidResponse.renderer)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({doc, bid: bidResponse, id: bidResponse.adId})
@@ -309,7 +312,7 @@ export function renderAdDirect(doc, adId, options) {
   function fail(reason, message) {
     emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
   }
-  function resizeFn(width, height) {
+  function resizeFn(width, height, setDimensionsAsStyle) {
     const frame = doc.defaultView?.frameElement;
     if (frame) {
       if (width) {
@@ -320,6 +323,8 @@ export function renderAdDirect(doc, adId, options) {
         frame.height = height;
         frame.style.height && (frame.style.height = `${height}px`);
       }
+      setDimensionsAsStyle && width && (frame.style.width = width+'px');
+      setDimensionsAsStyle && height && (frame.style.height = height+'px');
     }
   }
   const messageHandler = creativeMessageHandler({resizeFn});
@@ -352,7 +357,7 @@ export function renderAdDirect(doc, adId, options) {
     } else {
       getBidToRender(adId).then(bidResponse => {
         bid = bidResponse;
-        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
+        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough, setDimensionsAsStyle:options?.setDimensionsAsStyle}, bidResponse, doc});
       });
     }
   } catch (e) {

@@ -73,7 +73,7 @@ export function createBid(statusCode, identifiers) {
 
 export function restoreValidBid(origBid) {
   const bid = createBid(1, origBid);
-  const {adId, adapterCode, adResponse, adUnitCode, bidder, bidderCode, width, height, ad, mediaType, renderer, requestTimestamp, ttl, cpm, originalCPM, originalCurrency, ...rest} = origBid;
+  const {adId, adapterCode, adResponse, adUnitCode, bidder, bidderCode, width, height, ad, vastUrl, vastXml, mediaType, renderer, requestTimestamp, ttl, cpm, currency, originalCpm, originalCPM, originalCurrency, ...rest} = origBid;
   try{
     /*if(bid.bidderCode && bid.bidderCode.indexOf('debugger')==-1){
       debugger;
@@ -93,9 +93,14 @@ export function restoreValidBid(origBid) {
   bid.bidder = bidder;
   bid.bidderCode = bidderCode;
   bid.ad = ad;
+  bid.vastUrl = vastUrl;
+  bid.vastXml = vastXml;
+  bid.currency = currency;
   bid.cpm = cpm;
   bid.mediaType = mediaType;
   bid.originalCPM = originalCPM;
+  bid.originalCpm = originalCpm;
+  bid.originalCurrency = originalCurrency;
   bid.width = width;
   bid.height = height;
   bid.requestTimestamp = requestTimestamp;

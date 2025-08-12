@@ -680,10 +680,14 @@ export const spec = {
       this.tryGetPubCidFromOldLocation(ret, bidRequest);
       return ret;
     }
-    for (let obj of bidRequest.userIdAsEids) {
-      ret[obj.source] = deepAccess(obj, 'uids.0.id');
+    try{
+      for (let obj of bidRequest.userIdAsEids) {
+        ret[obj.source] = deepAccess(obj, 'uids.0.id');
+      }
+      this.tryGetPubCidFromOldLocation(ret, bidRequest);
+    }catch(e){
+      logError('findAllUserIdsFromEids - error while processing bidRequest.userIdAsEids', e);
     }
-    this.tryGetPubCidFromOldLocation(ret, bidRequest);
     return ret;
   },
   tryGetPubCidFromOldLocation(ret, bidRequest) {

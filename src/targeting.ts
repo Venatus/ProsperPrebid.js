@@ -31,6 +31,7 @@ import {lock} from "./targeting/lock.ts";
 var pbTargetingKeys = [];
 
 const MAX_DFP_KEYLENGTH = 20;
+let DEFAULT_TTL_BUFFER = 1;
 
 const CFG_ALLOW_TARGETING_KEYS = `targetingControls.allowTargetingKeys`;
 const CFG_ADD_TARGETING_KEYS = `targetingControls.addTargetingKeys`;

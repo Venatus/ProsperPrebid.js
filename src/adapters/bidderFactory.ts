@@ -307,7 +307,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
       }
 
       const validBidRequests = adapterMetrics(bidderRequest)
-        .measureTime('validate', () => bidderRequest.bids.filter((br) => filterAndWarn(tidGuard.bidRequest(br))));
+        .measureTime('validate', () => bidderRequest.bids.filter((br) => filterAndWarn(tidGuard.bidRequest(br), br)));
 
       if (validBidRequests.length === 0) {
         afterAllResponses();
@@ -381,10 +381,10 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
     registerSyncInner(spec, responses, gdprConsent, uspConsent, gppConsent);
   }
 
-  function filterAndWarn(bid) {
+  function filterAndWarn(bid, originialBid?) {
     if (!spec.isBidRequestValid(bid)) {
       logWarn(`Invalid bid sent to bidder ${spec.code}: ${JSON.stringify(bid)}`);
-      events.emit(EVENTS.BIDDER_INVALID_REQUEST, bid);
+      events.emit(EVENTS.BIDDER_INVALID_REQUEST, originialBid ?? bid);
       return false;
     }
     return true;

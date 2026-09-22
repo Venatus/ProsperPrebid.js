@@ -9,6 +9,7 @@ import {
   getFirstMatchingFloor,
   getFloor,
   handleSetFloorsConfig,
+  handleFetchResponse,
   requestBidsHook,
   isFloorsDataValid,
   addBidResponseHook,
@@ -757,6 +758,128 @@ describe('the price floors module', function () {
 
       const floorData = createFloorsDataForAuction(adUnits, 'id');
       expect(floorData.skippedReason).to.equal(FLOOR_SKIPPED_REASON.RANDOM);
+    });
+  });
+
+  describe('assignmentScope (Venatus DG-4965)', function () {
+    let adUnits;
+    const baseModel = {
+      modelVersion: 'prosper-v5-base-2026092210',
+      modelWeight: 50,
+      schema: { delimiter: '|', fields: ['mediaType'] },
+      values: { 'banner': 1.0, 'video': 5.0, '*': 2.5 }
+    };
+    const probeModel = {
+      modelVersion: 'prosper-v5-probe-2026092210',
+      modelWeight: 50,
+      schema: { delimiter: '|', fields: ['mediaType'] },
+      values: { 'banner': 1.2, 'video': 6.0, '*': 3.0 }
+    };
+    const twoArmFile = {
+      floorProvider: 'venatus',
+      floorsSchemaVersion: 2,
+      currency: 'USD',
+      skipRate: 10,
+      modelGroups: [baseModel, probeModel]
+    };
+    // Math.random drives two draws per auction: the model group first (random * weightSum + 1,
+    // so 0.1 picks base and 0.9 picks probe at weights 50/50), then the skip (random * 100 < skipRate)
+    function twoArmConfig(assignmentScope) {
+      const conf = utils.deepClone(basicFloorConfig);
+      conf.data = utils.deepClone(twoArmFile);
+      if (assignmentScope) conf.assignmentScope = assignmentScope;
+      return conf;
+    }
+
+    beforeEach(function () {
+      adUnits = [getAdUnitMock()];
+    });
+
+    it('defaults to drawing the model group and the skip on every auction', function () {
+      const random = sandbox.stub(Math, 'random');
+      random.onCall(0).returns(0.1); random.onCall(1).returns(0.5);
+      random.onCall(2).returns(0.9); random.onCall(3).returns(0.05);
+      handleSetFloorsConfig(twoArmConfig());
+      const first = createFloorsDataForAuction(adUnits, 'a1');
+      const second = createFloorsDataForAuction(adUnits, 'a2');
+      expect(first.assignmentScope).to.equal('auction');
+      expect(first.data.modelVersion).to.equal(baseModel.modelVersion);
+      expect(first.skipped).to.equal(false);
+      expect(second.data.modelVersion).to.equal(probeModel.modelVersion);
+      expect(second.skipped).to.equal(true);
+      expect(random.callCount).to.equal(4);
+    });
+
+    it('with assignmentScope page holds the first draw for every later auction on the page', function () {
+      const random = sandbox.stub(Math, 'random');
+      random.onCall(0).returns(0.9); random.onCall(1).returns(0.5);
+      random.returns(0.05); // any later draw would flip both the model and the skip
+      handleSetFloorsConfig(twoArmConfig('page'));
+      const first = createFloorsDataForAuction(adUnits, 'a1');
+      const second = createFloorsDataForAuction(adUnits, 'a2');
+      const third = createFloorsDataForAuction(adUnits, 'a3');
+      expect(first.assignmentScope).to.equal('page');
+      [first, second, third].forEach(floorData => {
+        expect(floorData.data.modelVersion).to.equal(probeModel.modelVersion);
+        expect(floorData.skipped).to.equal(false);
+      });
+      expect(random.callCount).to.equal(2);
+      // the bids carry the held arm too
+      expect(utils.deepAccess(adUnits, '0.bids.0.floorData.modelVersion')).to.equal(probeModel.modelVersion);
+      expect(utils.deepAccess(adUnits, '0.bids.0.floorData.skipped')).to.equal(false);
+    });
+
+    it('with assignmentScope page keeps a skipped (control) page in control', function () {
+      const random = sandbox.stub(Math, 'random');
+      random.onCall(0).returns(0.1); random.onCall(1).returns(0.05);
+      random.returns(0.5);
+      handleSetFloorsConfig(twoArmConfig('page'));
+      const first = createFloorsDataForAuction(adUnits, 'a1');
+      const second = createFloorsDataForAuction(adUnits, 'a2');
+      expect(first.skipped).to.equal(true);
+      expect(first.skippedReason).to.equal(FLOOR_SKIPPED_REASON.RANDOM);
+      expect(second.skipped).to.equal(true);
+      expect(second.data.modelVersion).to.equal(baseModel.modelVersion);
+      expect(random.callCount).to.equal(2);
+    });
+
+    it('draws afresh once when a fetched file replaces the setConfig block, then holds again', function () {
+      const random = sandbox.stub(Math, 'random');
+      // the setConfig block is schema 1 (no model group): one skip draw, skipped
+      random.onCall(0).returns(0.05);
+      // the fetched file: model group, then skip
+      random.onCall(1).returns(0.1); random.onCall(2).returns(0.5);
+      random.returns(0.9);
+      const conf = twoArmConfig('page');
+      conf.data = utils.deepClone(basicFloorData); // fallback block served until the fetch lands
+      conf.skipRate = 10;
+      handleSetFloorsConfig(conf);
+      const onFallback = createFloorsDataForAuction(adUnits, 'a1');
+      expect(onFallback.data.modelVersion).to.equal('basic model');
+      expect(onFallback.skipped).to.equal(true);
+      handleFetchResponse(JSON.stringify(twoArmFile));
+      const first = createFloorsDataForAuction(adUnits, 'a2');
+      const second = createFloorsDataForAuction(adUnits, 'a3');
+      expect(first.data.location).to.equal('fetch');
+      expect(first.data.modelVersion).to.equal(baseModel.modelVersion);
+      expect(first.skipped).to.equal(false);
+      expect(second.data.modelVersion).to.equal(baseModel.modelVersion);
+      expect(second.skipped).to.equal(false);
+      expect(random.callCount).to.equal(3);
+    });
+
+    it('starts a new page assignment on a new setConfig', function () {
+      const random = sandbox.stub(Math, 'random');
+      random.onCall(0).returns(0.1); random.onCall(1).returns(0.5);
+      random.onCall(2).returns(0.9); random.onCall(3).returns(0.05);
+      handleSetFloorsConfig(twoArmConfig('page'));
+      const first = createFloorsDataForAuction(adUnits, 'a1');
+      handleSetFloorsConfig(twoArmConfig('page'));
+      const second = createFloorsDataForAuction(adUnits, 'a2');
+      expect(first.data.modelVersion).to.equal(baseModel.modelVersion);
+      expect(first.skipped).to.equal(false);
+      expect(second.data.modelVersion).to.equal(probeModel.modelVersion);
+      expect(second.skipped).to.equal(true);
     });
   });
 

@@ -46,6 +46,15 @@ pbjs.setConfig({
 | data                   | The data to be used to select appropriate floors. See schema for more detail                                        |
 | additionalSchemaFields | An object of additional fields to be used in a floor data object. The schema is KEY: function to retrieve the match |
 
+### Page-level arm assignment (Venatus fork, DG-4965)
+
+By default the module draws the `skipRate` control and, for `floorsSchemaVersion` 2, the model
+group on every auction. Set `assignmentScope: 'page'` in the floors config to make both draws once
+per page view for the floors data in force and reuse them for every later auction, so the whole
+page runs in one arm. The draw is repeated only when the data changes (a fetched file replacing the
+`data` block from `setConfig`) or on a new `setConfig`. `assignmentScope: 'auction'` (the default)
+keeps the upstream behaviour.
+
 ### Passing floors to Bid Adapters
 Because it is possible for many rules to match any given bidRequest, (wether it be due to more than one size or more than one mediaType), an encapsolated function is to be passed to bidders which will allow bidders to have insight as to what the floor could be.
 

@@ -106,6 +106,19 @@ const _delayedAuctions = timeoutQueue();
 export let _floorDataForAuction = {};
 
 /**
+ * @summary Venatus (DG-4965): the page's floor arm while floors.assignmentScope is 'page'.
+ * Upstream draws the skipRate control and the schema-2 model group on EVERY auction, so on a
+ * page that runs many auctions a "control-first" page and a "floored-first" page receive
+ * nearly the same mix of arms and a page-level comparison of the two is diluted to noise.
+ * With assignmentScope 'page' both draws are made once for the floors data in force and
+ * reused for every later auction on the page, so the whole page runs in one arm. The
+ * assignment is keyed on that data (its location, the skip rate in force and the model
+ * versions): a fetched file replacing the setConfig fallback block draws afresh, a new
+ * setConfig resets it. Schema-1 data has no model group, only the skip draw is held.
+ */
+let _pageAssignment: { key: string, skipped?: boolean, modelIndex?: number } | null = null;
+
+/**
  * @summary Simple function to round up to a certain decimal degree
  */
 function roundUp(number, precision) {
@@ -479,6 +492,30 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
   });
 }
 
+/**
+ * @summary The skip rate in force for the floors data given: the pbjs_skipRate query override,
+ * then the data block's own skipRate, then the config's.
+ */
+function skipRateInForce(floorsConfig) {
+  return getParameterByName('pbjs_skipRate') || (deepAccess(floorsConfig, 'data.skipRate') ?? floorsConfig.skipRate);
+}
+
+/**
+ * @summary Venatus (DG-4965): the page assignment for the floors data in force (see _pageAssignment).
+ * Returns the held assignment while the data is unchanged and a fresh, undrawn one otherwise.
+ */
+function pageAssignmentFor(floorsConfig) {
+  const data = floorsConfig.data || {};
+  const modelVersions = Array.isArray(data.modelGroups)
+    ? data.modelGroups.map(model => model.modelVersion).join(',')
+    : (data.modelVersion || '');
+  const key = `${data.location || ''}|${skipRateInForce(floorsConfig)}|${modelVersions}`;
+  if (!_pageAssignment || _pageAssignment.key !== key) {
+    _pageAssignment = { key };
+  }
+  return _pageAssignment;
+}
+
 export function pickRandomModel(modelGroups, weightSum) {
   // we loop through the models subtracting the current model weight from our random number
   // once we are at or below zero, we return the associated model
@@ -496,11 +533,23 @@ export function pickRandomModel(modelGroups, weightSum) {
  */
 export function createFloorsDataForAuction(adUnits, auctionId) {
   const resolvedFloorsData = deepClone(_floorsConfig);
+  // Venatus (DG-4965): with assignmentScope 'page' the model group and the skip draw below are
+  // made once per page for the data in force and held for every later auction
+  const pageAssignment = resolvedFloorsData.assignmentScope === 'page' ? pageAssignmentFor(_floorsConfig) : null;
   // if using schema 2 pick a model here:
   if (deepAccess(resolvedFloorsData, 'data.floorsSchemaVersion') === 2) {
     // merge the models specific stuff into the top level data settings (now it looks like floorsSchemaVersion 1!)
     const { modelGroups, ...rest } = resolvedFloorsData.data;
-    resolvedFloorsData.data = Object.assign(rest, pickRandomModel(modelGroups, rest.modelWeightSum));
+    let model;
+    if (pageAssignment) {
+      if (pageAssignment.modelIndex === undefined || !modelGroups[pageAssignment.modelIndex]) {
+        pageAssignment.modelIndex = modelGroups.indexOf(pickRandomModel(modelGroups, rest.modelWeightSum));
+      }
+      model = modelGroups[pageAssignment.modelIndex];
+    } else {
+      model = pickRandomModel(modelGroups, rest.modelWeightSum);
+    }
+    resolvedFloorsData.data = Object.assign(rest, model);
   }
 
   // if we do not have a floors data set, we will try to use data set on adUnits
@@ -516,8 +565,16 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
     resolvedFloorsData.skippedReason = FLOOR_SKIPPED_REASON.NOT_FOUND;
   } else {
     // determine the skip rate now
-    const auctionSkipRate = getParameterByName('pbjs_skipRate') || (deepAccess(resolvedFloorsData, 'data.skipRate') ?? resolvedFloorsData.skipRate);
-    const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
+    const auctionSkipRate = skipRateInForce(resolvedFloorsData);
+    let isSkipped;
+    if (pageAssignment) {
+      if (pageAssignment.skipped === undefined) {
+        pageAssignment.skipped = Math.random() * 100 < parseFloat(auctionSkipRate);
+      }
+      isSkipped = pageAssignment.skipped;
+    } else {
+      isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
+    }
     resolvedFloorsData.skipped = isSkipped;
     if (isSkipped) resolvedFloorsData.skippedReason = FLOOR_SKIPPED_REASON.RANDOM;
   }
@@ -827,6 +884,14 @@ declare module '../src/adUnits' {
 export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> & {
   enabled?: boolean;
   /**
+   * Venatus (DG-4965): how often the skipRate control draw and the schema-2 model group draw are made.
+   * 'auction' (the default, upstream behaviour) draws on every auction. 'page' draws once for the
+   * floors data in force and reuses the result for every later auction on the page, so a page runs
+   * in a single arm; the draw is repeated only when the data changes (a fetched file replacing the
+   * setConfig block) or on a new setConfig.
+   */
+  assignmentScope?: 'auction' | 'page';
+  /**
    * The minimum CPM floor used by the Price Floors Module.
    * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
    */
@@ -898,8 +963,11 @@ declare module '../src/config' {
  * @summary This is the function which controls what happens during a pbjs.setConfig({...floors: {}}) is called
  */
 export function handleSetFloorsConfig(config) {
+  // Venatus (DG-4965): a new config is a new page assignment
+  _pageAssignment = null;
   _floorsConfig = pick(config, [
     'floorMin',
+    'assignmentScope', assignmentScope => assignmentScope === 'page' ? 'page' : 'auction',
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
     'floorProvider', floorProvider => deepAccess(config, 'data.floorProvider', floorProvider),
